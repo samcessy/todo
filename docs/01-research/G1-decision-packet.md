@@ -1,6 +1,6 @@
 # G1 Decision Packet
 
-**Status:** Waiting for the owner's decision · **Prepared:** 2026-11-16 by the orchestrator
+**Status:** Approved (G1, 2026-11-16, all 11 decisions as recommended) · **Prepared:** 2026-11-16 by the orchestrator
 **Inputs:** R-001 to R-005 (each with a red-team review appended)
 
 ## Research outcome

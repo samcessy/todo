@@ -57,3 +57,4 @@ in the task file. It does not improvise.
 | Gate | Date | Approver | Outcome | Notes |
 |---|---|---|---|---|
 | G0 | 2026-11-16 | Project owner | Approved | Decisions D1–D8 accepted as recommended |
+| G1 | 2026-11-16 | Project owner | Approved | All 11 decisions in docs/01-research/G1-decision-packet.md accepted as recommended |
