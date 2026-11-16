@@ -14,6 +14,7 @@ As a visitor, I can create and manage an account, so that my todos are private t
 - **AC3** Given valid credentials, when I log in, then I land on `/todos`.
 - **AC4** Given 5 failed login attempts in a row, when I try again, then I am rate-limited.
 - **AC5** Given I am logged in, when I delete my account and confirm with my password, then my user record and all my todos are removed.
+- **AC6** Given I enabled two-factor login, when I log in with the correct password, then I must also enter a valid TOTP or recovery code (starter-kit behaviour, kept by G1-3; covered by the kit's own tests).
 
 ## US-02 Create a todo (Must)
 

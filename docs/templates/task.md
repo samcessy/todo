@@ -14,12 +14,13 @@ acceptance: []         # AC IDs, e.g. US-05.AC1..AC5
 tests_first: true      # QA writes failing tests from AC before implementation
 definition_of_done:
   - All listed AC tests pass; full suite green
-  - pint, phpstan, eslint, vue-tsc clean
+  - composer lint:check, composer types:check, npm run check, npm run types:check clean
   - Docs updated or N/A explained
   - Handoff note written
 human_approval_required: []
 estimate: XS | S | M   # anything larger must be split
 status: draft | ready | in-progress | in-review | done | blocked
+branch: task/T-XXX-short-name   # required: the CI scope check reads the task ID from the branch name
 ```
 
 ## Notes

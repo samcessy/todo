@@ -1,42 +1,75 @@
 {
   "permissions": {
     "allow": [
-      "Bash(php artisan test:*)",
-      "Bash(php artisan route:list:*)",
-      "Bash(vendor/bin/pint:*)",
-      "Bash(vendor/bin/phpstan:*)",
-      "Bash(vendor/bin/pest:*)",
-      "Bash(composer test:*)",
-      "Bash(composer audit:*)",
-      "Bash(npm run lint:*)",
-      "Bash(npm run types:*)",
-      "Bash(npm run test:*)",
-      "Bash(npm run build:*)",
-      "Bash(npm audit:*)",
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)"
+      "Bash(php artisan test *)",
+      "Bash(php artisan route:list *)",
+      "Bash(vendor/bin/pint *)",
+      "Bash(vendor/bin/phpstan *)",
+      "Bash(vendor/bin/pest *)",
+      "Bash(composer test)",
+      "Bash(composer lint)",
+      "Bash(composer lint:check)",
+      "Bash(composer types:check)",
+      "Bash(composer ci:check)",
+      "Bash(composer audit *)",
+      "Bash(npm run build)",
+      "Bash(npm run check)",
+      "Bash(npm run check:fix)",
+      "Bash(npm run types:check)",
+      "Bash(npm audit *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)"
     ],
     "ask": [
-      "Bash(composer require:*)",
-      "Bash(composer remove:*)",
-      "Bash(npm install:*)",
-      "Bash(npm uninstall:*)",
-      "Bash(php artisan migrate:*)",
-      "Bash(git push:*)"
+      "Bash(composer require *)",
+      "Bash(composer remove *)",
+      "Bash(composer update *)",
+      "Bash(npm install *)",
+      "Bash(npm i *)",
+      "Bash(npm add *)",
+      "Bash(npm update *)",
+      "Bash(npm uninstall *)",
+      "Bash(npx *)",
+      "Bash(php artisan migrate*)",
+      "Bash(php artisan db:seed*)",
+      "Bash(git push *)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean*)",
+      "Bash(git checkout -- *)",
+      "Bash(git rebase*)",
+      "Bash(gh api *)",
+      "Bash(gh workflow run*)",
+      "Bash(gh pr review*)"
     ],
     "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Edit(./.env*)",
-      "Write(./.env*)",
-      "Bash(git push origin main:*)",
-      "Bash(git push --force:*)",
-      "Bash(git push -f:*)",
-      "Bash(php artisan db:wipe:*)"
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Edit(**/.env)",
+      "Edit(**/.env.*)",
+      "Bash(php artisan tinker*)",
+      "Bash(php artisan config:show*)",
+      "Bash(php artisan env*)",
+      "Bash(php artisan db:wipe*)",
+      "Bash(git push *main*)",
+      "Bash(git push *--force*)",
+      "Bash(git push * -f*)",
+      "Bash(git push -f*)",
+      "Bash(gh pr merge*)",
+      "Bash(gh secret*)",
+      "Bash(gh repo edit*)",
+      "Bash(gh api *pending_deployments*)"
     ]
   },
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|mcp__laravel-boost__.*",
+        "hooks": [
+          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/path-guard.sh", "timeout": 10 }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",

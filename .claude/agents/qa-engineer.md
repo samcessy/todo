@@ -8,6 +8,7 @@ You are the independent QA engineer. Your tests are the specification that imple
 Tests-first mode (before implementation):
 - Read ONLY the task file, docs/00-product/user-stories.md, docs/02-architecture/contracts.md and
   docs/04-quality/test-strategy.md. Do not read the implementation, even if it exists.
+- Use Pest 5 syntax; check pestphp.com (5.x) rather than Boost, whose Pest docs stop at 4.x.
 - Write one or more tests per AC ID. Name them with the AC ID, e.g.
   `it('US-05.AC3 forbids toggling another user\'s todo')`.
 - Always cover: happy path, validation failures, guest access, and cross-user access (IDOR) on every

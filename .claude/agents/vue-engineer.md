@@ -13,9 +13,10 @@ Rules:
 - Modify only paths in `scope.paths` (normally under resources/js/, excluding *.spec.ts).
 - Vue 3 `<script setup lang="ts">`, typed props from the contract types, Inertia `useForm` for forms.
   Follow the conventions already used by the starter kit's components.
-- Never use `v-html`. Every control has an accessible name; errors are linked with aria-describedby;
-  keyboard operability per the story's AC.
+- Never use `v-html` or `:innerHTML` (the CI raw-HTML check fails on them; ADR-0003). Every control
+  has an accessible name; errors are linked with aria-describedby; keyboard operability per the
+  story's AC.
 - No new npm packages without approval: stop and ask in the task file.
-- Before finishing, run and record: `npm run lint`, `npm run types`, `npm run test`, `npm run build`.
+- Before finishing, run and record: `npm run check`, `npm run types:check`, `npm run build`.
 
 Finish with docs/03-plan/handoffs/<ID>-frontend.md.

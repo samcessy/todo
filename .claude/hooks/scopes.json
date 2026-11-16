@@ -1,0 +1,36 @@
+{
+  "_comment": "Role-level write scopes for path-guard.sh. Globs are bash patterns relative to the repo root; '*' also matches '/'. Task-level scope.paths are enforced in CI, not here. Changes require owner review.",
+  "global_deny": [".claude/settings.json", ".claude/settings.local.json", ".claude/hooks/*", ".env", ".env.*", "*/.env", "*/.env.*", "vendor/*", "node_modules/*"],
+  "main": {
+    "deny": [],
+    "ask_in_autonomous_modes": ["tests/*", ".github/*"]
+  },
+  "roles": {
+    "architect": {
+      "allow": ["docs/01-research/*", "docs/02-architecture/*", "docs/adr/*"]
+    },
+    "general-purpose": {
+      "allow": ["docs/01-research/*", "docs/02-architecture/*", "docs/adr/*"]
+    },
+    "laravel-engineer": {
+      "allow": ["app/*", "routes/*", "database/*", "config/*", "bootstrap/*", "lang/*", "docs/03-plan/handoffs/*-backend.md", "docs/03-plan/tasks/*.md"],
+      "deny": ["tests/*", ".github/*", ".claude/*"]
+    },
+    "vue-engineer": {
+      "allow": ["resources/js/*", "resources/css/*", "docs/03-plan/handoffs/*-frontend.md", "docs/03-plan/tasks/*.md"],
+      "deny": ["*.spec.ts", "tests/*", ".github/*", ".claude/*"]
+    },
+    "qa-engineer": {
+      "allow": ["tests/*", "resources/js/*.spec.ts", "docs/04-quality/*", "docs/03-plan/handoffs/*-qa.md", "docs/03-plan/tasks/*.md"]
+    },
+    "devops-engineer": {
+      "allow": [".github/*", "docs/05-operations/*", "docs/03-plan/handoffs/*-devops.md", "docs/03-plan/tasks/*.md"]
+    },
+    "security-reviewer": {
+      "allow": ["docs/03-plan/handoffs/*-security.md"]
+    },
+    "Explore": { "allow": [] },
+    "Plan": { "allow": [] },
+    "statusline-setup": { "allow": [] }
+  }
+}

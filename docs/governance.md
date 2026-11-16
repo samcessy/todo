@@ -19,6 +19,13 @@ AI drafts, deterministic tools verify, and humans decide.
 **Approver:** the project owner, as a single approver (decision D6 in `00-product/assumptions.md`).
 The compensating control is that the AI QA and AI security reviews are mandatory inputs to G4 and G5.
 
+**Identities (G1-1):** agents push and open PRs as a separate low-privilege bot GitHub account.
+The owner reviews and merges as themselves. The owner's own `gh` login is never available in agent sessions.
+
+**Production release (G1-2):** CI deploys staging. Production is deployed only by the owner, who triggers
+the owner-held Laravel Cloud deploy hook with the staged commit SHA. The hook URL is never stored in GitHub,
+in the repo, or in any agent-readable location.
+
 ## Autonomy matrix
 
 | AI acts autonomously | AI proposes, human approves | AI never does |
@@ -45,12 +52,17 @@ in the task file. It does not improvise.
 
 ## Enforcement
 
-| Rule | How it is enforced |
-|---|---|
-| `.env` access, push to main, destructive DB commands | `.claude/settings.json` deny and ask rules (enforced by the harness) |
-| PHP formatting | PostToolUse hook `.claude/hooks/pint-on-edit.sh` |
-| Agent path scopes | Agent instructions, plus the PR diff review at G4. **These are not technically enforced yet.** A path-guard hook is a candidate for T-001 |
-| Merge and deploy approval | GitHub branch protection and Environment required reviewers (T-002) |
+| Rule | How it is enforced | Strength |
+|---|---|---|
+| `.env` access, push to main, force push, destructive DB commands, `gh pr merge`/`secret` | `.claude/settings.json` deny and ask rules | Best-effort: Bash rules can be bypassed by unusual command forms or scripts. A sandbox is planned |
+| Push to `main`, merge approval | GitHub branch protection: PR required, 1 approval, required checks (T-002). Bot identity (G1-1) | **Authoritative** |
+| Production deploy | Owner-held deploy hook (G1-2) | **Authoritative**: agents never have the hook |
+| Agent role scopes | PreToolUse `.claude/hooks/path-guard.sh` + `scopes.json` (routes on `agent_type`; protects `.claude/settings.json` and hooks from every agent, including the main session) | Best-effort for Bash writes; reliable for Edit/Write |
+| Task scopes (`scope.paths`) | CI scope check: the PR's changed files must match the task's `scope.paths` (T-002) | **Authoritative** |
+| Raw HTML in templates | CI `vue/compiler-sfc` check (ADR-0003) | **Authoritative** |
+| PHP formatting | PostToolUse `.claude/hooks/pint-on-edit.sh` (not run for Bash edits) + CI `pint --test` | CI is authoritative |
+
+Changes to `.claude/settings.json`, `.claude/hooks/*` and `scopes.json` are made by the owner only.
 
 ## Gate log
 
