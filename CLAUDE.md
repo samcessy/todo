@@ -5,7 +5,7 @@ This is the reference implementation of our AI-first engineering framework.
 
 ## Current phase
 
-**Phase 1 (Research): G0 approved 2026-11-16. Waiting for G1.**
+**Phase 2 (Architecture): G1 approved 2026-11-16. Waiting for G2.**
 No application code exists, and none may be written until Gate G3 (plan) is approved.
 The gate status is recorded in `docs/governance.md` → Gate log.
 
