@@ -21,7 +21,7 @@ The compensating control is that the AI QA and AI security reviews are mandatory
 
 **Identities (G1-1, G2-5):** agents push and open PRs as a separate low-privilege bot GitHub account,
 using a classic PAT with only the `public_repo` scope (no `workflow` scope, 90-day expiry) and no SSH keys,
-so the bot cannot change `.github/workflows/*`. *(Token type pending owner confirmation at the G2 re-check.)*
+so the bot cannot change `.github/workflows/*`. *(Token type confirmed by the owner, 2026-11-17.)*
 The owner reviews and merges as themselves. The owner's own `gh` login is never available in agent sessions.
 
 **Production release (G1-2):** CI deploys staging. Production is deployed only by the owner, who triggers

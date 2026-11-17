@@ -156,3 +156,42 @@ Nothing in the design is **untestable** in principle. NFR-05 warm and cold are m
 
 ## Recommendation to the owner (G2)
 Approve the architecture **once F-01, F-02 and F-03 are fixed in the docs**. Before G3, either fix the Medium findings (F-04 to F-13) or carry each into a named T-001 spike item. The Low findings can be fixed in the `contracts.md` edit that QA's first tests-first task depends on.
+
+## Re-check (2026-11-17)
+
+**Author:** QA engineer agent (design-review mode) · **Scope:** the three High findings only (G2 decision packet, "After approval" step 2), a sanity check of the Medium/Low dispositions, and a contradiction scan of the revised docs.
+**Inputs:** `docs/02-architecture/G2-decision-packet.md` (approved 2026-11-17), revised `contracts.md`, `architecture.md`, `security.md`, `data-model.md`, `coding-standards.md`, ADR-0001 to ADR-0006, `docs/00-product/user-stories.md` (now with `CC.AC1`–`CC.AC3`), `requirements.md`, `docs/governance.md` (exception E-1), `.claude/agents/qa-engineer.md`, `.claude/hooks/scopes.json`.
+
+### Verdict: **Testable with changes** (the changes are not G2 blockers)
+All three High findings are **resolved**. I found no new contradiction that blocks G2. Three new issues (N-1 to N-3 below) would make a tests-first QA agent stop or guess on 3 rows. Each is a doc-only fix and should land before G3, or before the task that writes those rows.
+
+### High findings
+| ID | Status | Where it is resolved | Notes |
+|---|---|---|---|
+| F-01 | **RESOLVED** | `contracts.md` §1.1.1 (status table per request type, lines 19–37, with the "Test convention" paragraph); `architecture.md` §2 step 5 (lines 52–53) and §6 "Write responses" | Inertia POST → 302, Inertia PATCH/DELETE → 303, no header → 302, the 419 handler → 302 for every method. The `inertia()` helper is named in the contract. The "302/303" wording is gone. The T-001 spike checks each cell against the kit before QA writes the status tests. That's acceptable, because any change needs owner approval |
+| F-02 | **RESOLVED** | `contracts.md` §6.1 "UI contract": elements U-01 to U-23 and focus targets F-a to F-l (lines 242–288); §3 link targets (line 132); `user-stories.md` line 85 points to §6.1 | Every name and string I asked for is defined: the labels, buttons, dialog titles, filter-link format `<Label> (<n>)`, empty-state texts, error ids `<form>-<field>-error` and the `aria-invalid` rule. One proposal was rejected with a reason I accept (`architecture.md` §9 "Rejected review items"): the checkbox keeps one name, `Mark "<title>" complete`, in both states, and the test asserts `checked` instead. F-10 (focus after delete, completion, edit or filter change) and F-11 (no autofocus, plus the `Add your first todo` button) are resolved in the same table |
+| F-03 | **RESOLVED** | `governance.md` §Exceptions **E-1** (line 59); `architecture.md` §5.1 (lines 140–155: complete file list including `AppHeader.vue`, `Welcome.vue` and `PasskeyVerify.vue:33`); `contracts.md` §1.1 "Kit routes changed" and §7 row US-01.AC1 | The exception is scoped: delete `DashboardTest`, replace it 1:1 with `IndexTest` (`US-01.AC1` plus 200 for a verified user), retarget 6 assertions, all in one QA task with `human_approval_required: [E-1]`. My role file still says a deleted test is a blocker, so in verification mode I will treat E-1 as the only allowed deletion. For the `PasskeyVerify.vue` string, which no tool catches, the fallback is a grep in the handoff plus a passkey check "when feasible" after T-001. The matrix carries that check as a conditional row |
+
+### Medium and Low findings: sanity check
+All 19 (F-04 to F-22) are mapped in `architecture.md` §9. F-06 is mapped with A-02 ("A-02 / F-06"), and F-21 is marked superseded by G2-13, with its guard test rejected for a reason I accept. I re-checked these only as far as the matrix needed (F-04, F-07, F-10, F-11, F-17). All are reflected in the docs.
+
+### New issues (contradictions a tests-first agent would hit)
+| ID | Severity | Location | Issue | Required change (doc) |
+|---|---|---|---|---|
+| N-1 | **Medium** (stops one row) | ADR-0003 "Frontend unit tests"; `contracts.md` §5.3 and §7; `coding-standards.md` §4 (lines 59, 67); `architecture.md` §5 vs `governance.md` "Loop guardrails", `.claude/agents/qa-engineer.md` line 23, `.claude/hooks/scopes.json` (`qa-engineer.allow: resources/js/*.spec.ts`; `vue-engineer.deny: *.spec.ts`) | **The QA agent may not create `resources/js/lib/overdue.test.ts`.** Governance and the path guard let QA write only `*.spec.ts` under `resources/js/`, and they *don't* stop the vue-engineer from writing or editing a `*.test.ts`. So the US-03.AC5 unit test is either blocked for QA, which escalates under the governance rule, or it ends up owned by the implementer, which breaks tests-first independence | Rename it to **`resources/js/lib/overdue.spec.ts`** in ADR-0003, contracts §5.3 and §7, `coding-standards.md` §4 (file pattern and matrix grep `resources/js/**/*.spec.ts`) and `architecture.md` §5. Vitest's default include matches `*.spec.ts`, so `vp test run` needs no config (UNVERIFIED for Vite+'s defaults: the overdue task confirms it). The other option, widening QA's scope to `*.test.ts`, means owner-only edits to `scopes.json` and governance. Until N-1 is decided, the matrix keeps the requested name and notes the issue |
+| N-2 | **Medium** | `security.md` T-24 "Verified by" (`HttpsRedirectTest`); `architecture.md` §5 (`URL::forceHttps(...)` in `AppServiceProvider`) | **"With the environment switched to production … `route('todos.index')` starts with `https://`" can fail against a correct implementation.** `URL::forceHttps(! app()->environment(['local','testing']))` is evaluated once in `boot()`. The test app boots as `testing`, so changing the environment inside the test doesn't re-run the provider (inferred from where the call sits. Same class of problem as F-01). The 308 half is fine, because `SecurityHeaders` decides per request. `PasswordPolicyTest` is unaffected if the kit's `Password::defaults()` stays a closure, which it is in the kit | State the mechanism in T-24 or `test-strategy.md`, for example: switch the environment, then re-run `AppServiceProvider::boot()` (or call `$this->refreshApplication()` with `APP_ENV=production`) before asserting URL generation. Add it to the T-001 spike list |
+| N-3 | **Low** | `user-stories.md` CC.AC2 ("**Every** form") vs `contracts.md` §6.1 U-07 and §7 CC.AC2 (only `todos.store` and `todos.update`) | It's unclear whether the kit's forms (login, register, settings) must link errors with `aria-describedby`. A tests-first agent can't tell whether to write CC.AC2 tests for them. The kit's `InputError` is probably a sibling `<div>` with no id link (UNVERIFIED), and the axe scan doesn't check this | `contracts.md` §7: state that CC.AC2 covers the todo forms only and that kit forms are covered by the CC.AC1 scan (owner-visible scope note), **or** add the kit forms to U-07 and record the kit baseline at T-001 |
+
+Smaller items, no doc change needed:
+- `security.md` T-05 point (3) (the middleware with `runningUnitTests()` overridden to false) names no file. The matrix puts it in `CsrfConfigTest`.
+- A user with zero todos who visits `/todos?filter=active` sees U-21 `No active todos.`, which has no invitation. So the US-03.AC3 browser test uses `/todos` (U-20).
+- `security.md` §4 puts the todo-write limiter test in `Feature/Todos/RateLimitTest`. The previous matrix had it in `StoreTest`, and the matrix now follows security.md.
+
+Checked and consistent: US-03.AC5 ("browser date") vs contracts §5.3 vs ADR-0003 vs data-model (no server `isOverdue`, factory `overdue()` = `2000-01-01`); US-06.AC4 vs F-g/F-h; US-05 "toggle" vs §1.1 note (both values in the IDOR tests); the query budget (exactly 2) in contracts §3, architecture §3 and ADR-0003; the filter link targets in contracts §3 vs U-19; the security.md §4 test list vs `architecture.md` §5 `tests/` layout (every named file appears in both); ADR-0003's CI suites vs where the browser tests live.
+
+### Matrix update
+`traceability-matrix.md` has been rewritten to match the revised design:
+- **37 / 37** AC IDs mapped (34 story ACs + `CC.AC1`–`CC.AC3`), in 64 AC rows.
+- 0 rows are still blocked by F-findings.
+- 3 rows carry a pending condition: the exact query budget after T-001, the passkey landing check after T-001, and the overdue unit-test file name (N-1).
+- 41 security, NFR and supporting rows, keyed by T-xx, NFR-xx or FR-xx. The UTC guard row is removed.

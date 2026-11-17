@@ -61,3 +61,13 @@
 1. The architect revises the Phase 2 docs (G2-1 to G2-16).
 2. The security and QA reviewers **re-check only the blockers and High findings**.
 3. If both pass, the orchestrator records G2. ADRs move to Accepted (approver: owner), and Phase 3 (task breakdown) starts.
+
+## Owner confirmations (2026-11-17)
+
+| Item | Decision |
+|---|---|
+| Bot token type (G2-5 substitution) | **Confirmed:** classic PAT with only `public_repo`, no `workflow` scope, 90-day expiry, no SSH keys on the bot account |
+| N-01 bcrypt truncation | **Confirmed:** passwords are limited to 72 bytes (ASVS 5.0.0 6.2.8) |
+| W-1 cookie-prefix waiver | **Confirmed:** ASVS 3.3.1 waived for `XSRF-TOKEN`, `remember_web_*`, `appearance`, `sidebar_state` |
+
+If the re-check contradicts any of these, it comes back to the owner before G2 is recorded.
