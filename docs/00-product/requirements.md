@@ -13,17 +13,17 @@
 | FR-05 | Mark the user's own todo complete or incomplete | US-05 |
 | FR-06 | Delete the user's own todo after confirmation | US-06 |
 | FR-07 | Filter the list by All, Active, or Completed. The filter is reflected in the URL | US-07 |
-| FR-08 | Highlight overdue todos (due date before today and not completed) | US-03 |
+| FR-08 | Highlight overdue todos (due date before the user's local date in the browser, and not completed) (G2-13) | US-03 |
 
 ## Non-functional requirements
 
 | ID | Category | Requirement | Verified by |
 |---|---|---|---|
-| NFR-01 | Security | OWASP ASVS Level 1 | Security review checklist |
+| NFR-01 | Security | OWASP ASVS **5.0.0** Level 1 (pinned at G2-2) | `docs/02-architecture/security.md` §3 coverage table + security review checklist; owner waivers in the gate log |
 | NFR-02 | Security | A user can never read or change another user's todos | IDOR feature tests on every `{todo}` route |
 | NFR-03 | Security | User-supplied content is never rendered as raw HTML | CI template check (`vue/compiler-sfc`) fails on `v-html` / `:innerHTML` outside the ADR-0003 allow-list (G1-4) |
 | NFR-04 | Security | Dependencies have no known high or critical CVEs | `composer audit`, `npm audit --audit-level=high` in CI |
-| NFR-05 | Performance | **Warm** p95 server response under 300 ms with 100 todos per user. **Cold start** (first request after scale-to-zero sleep) under 2 s. The list page runs a fixed number of queries (no N+1) (G1-5) | Query-count assertion test, staging measurement split warm/cold |
+| NFR-05 | Performance | **Warm** p95 server response under 300 ms with 100 todos per user. **Cold start** (first request after scale-to-zero sleep) under 2 s. The list page runs a fixed number of queries (no N+1): `GET /todos` runs exactly 2 queries in the test environment (contracts §3) (G1-5) | Query-count assertion test, staging curl job split warm/cold (ADR-0006) |
 | NFR-06 | Accessibility | WCAG 2.2 AA: every action works by keyboard, controls are labelled, focus is visible, contrast is at least 4.5:1 | Browser tests, axe or Lighthouse audit |
 | NFR-07 | Quality | Backend line coverage of at least 85%, and at least 90% on `app/Http` and `app/Policies`. Mutation score of at least 70% on changed domain code | Pest `--coverage --min`, `--mutate` |
 | NFR-08 | Quality | PHPStan (Larastan) at level 8 or higher. Zero Pint, Oxlint/Oxfmt (`npm run check`), or vue-tsc errors | CI |

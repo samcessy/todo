@@ -1,6 +1,6 @@
 # ADR-0002: No service layer. Controllers + FormRequests + Policies + Eloquent, with API Resources for props
 
-**Status:** Proposed · **Date:** 2026-11-16 · **Approver:** project owner (pending, G2)
+**Status:** Proposed · **Date:** 2026-11-16, revised 2026-11-17 (A-04, G2-13) · **Approver:** project owner (pending, after the G2 blocker re-check)
 
 ## Context
 - `requirements.md` Constraints: "Use framework features (FormRequests, Policies, Eloquent) before adding custom layers or packages."
@@ -32,9 +32,13 @@
 - `->resolve()` is local and explicit. It keeps the TypeScript types simple (`todos: Todo[]`) and leaves the API envelope untouched.
 - Guard against misuse: every page has **one strict `assertInertia` shape test**, using `has('todos.0', fn ($t) => $t->hasAll([...]))` without `etc()`. This test is the prop contract (R-002 red-team finding 1). A forgotten `->resolve()`, an added field or a leaked field fails it.
 
-**Exception**
-- The kit's shared `auth.user` stays as the raw `User` model, filtered by `#[Hidden(['password','two_factor_secret','two_factor_recovery_codes','remember_token'])]` (R-002 red-team finding 6).
-- A `missing('auth.user.two_factor_secret')`-style test guards it (security.md T-04).
+**Shared `auth.user` (revised after security review A-04)**
+- The first draft kept the kit's raw `User` model as a documented exception, filtered by `#[Hidden]`. That is a deny-list: any future column would leak with no failing test.
+- `HandleInertiaRequests` now shares an **explicit key list**, `$request->user()?->only(['id', 'name', 'email', 'email_verified_at'])`, so the exception is removed. T-001 adds any key the kit pages need, by an owner-approved change to contracts.md §4.
+- `SharedPropsTest` asserts the **exact key set** (security.md T-04).
+
+**Derived values**
+- `TodoResource` sends stored facts only. Overdue is not a prop: it depends on the user's local date, so the browser computes it (G2-13, contracts.md §5.3).
 
 ## Alternatives considered
 | Alternative | Why it was rejected |

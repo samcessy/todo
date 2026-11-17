@@ -1,6 +1,6 @@
 # Coding standards
 
-**Status:** Draft for G2 · **Date:** 2026-11-16
+**Status:** Draft for G2 (revised 2026-11-17 for G2-13, G2-16) · **Date:** 2026-11-16
 Principle: **follow the starter kit's conventions.** Where the kit is silent, prefer the Laravel and Vue docs defaults. Every rule here is enforced by a tool or by a named G4 review item.
 
 ## 1. Commands (the kit's real script names, R-001 E21/E22)
@@ -19,6 +19,8 @@ Principle: **follow the starter kit's conventions.** Where the kit is silent, pr
 | `npm run check:fix` | `vp check --fix` | — |
 | `npm run types:check` | `vue-tsc --noEmit` | CI |
 | `npm run check:html` | `node scripts/check-raw-html.mjs` (added in T-001, ADR-0003) | CI |
+| `npm run check:workflows` | `node scripts/check-workflows.mjs` (added in T-002, security.md T-18) | CI `workflow-lint` |
+| `npm run test` | `vp test run` (pure TypeScript unit tests, first used by `lib/overdue.ts`, G2-13) | CI `js-unit` |
 
 The CI-only gates are coverage (`--coverage --min=85` plus the per-directory script), mutation (`--mutate --min=70`), Postgres, browser tests and audits (ADR-0003).
 
@@ -33,7 +35,7 @@ The CI-only gates are coverage (`--coverage --min=85` plus the per-directory scr
 | Naming | Controllers: `<Model>Controller` with resource method names only (`index`, `store`, `update`, `destroy`). Sub-resources get their own controller (`TodoCompletionController@update`). FormRequests: `<Verb><Model>Request` (`StoreTodoRequest`, `UpdateTodoCompletionRequest`). Policies: `<Model>Policy`. Resources: `<Model>Resource`. Enums: singular, PascalCase cases (`TodoFilter::Active`). Shared validation traits go in `App\Concerns\<Model>ValidationRules` (the kit's pattern) | Pest arch `laravel` preset (suffixes, resource-only methods) |
 | Controllers | Thin: get validated input, call Eloquent, then redirect or render. No `DB::` facade and no inline authorisation (`abort_if` ownership checks). Authorisation goes on the route through `->can()` | Arch test, review |
 | Responses | Writes return `back(fallback: route('todos.index'))`, with `Inertia::flash('toast', ['type' => …, 'message' => …])`. Toast messages are short sentences ending with a full stop | `assertInertiaFlash` in tests |
-| Dates | Use `now()` and `today()` (CarbonImmutable, via the kit's `Date::use`). Don't use `new DateTime` | Review |
+| Dates | Use `now()` and `today()` (CarbonImmutable, via the kit's `Date::use`). Don't use `new DateTime`. Never compute a user-facing "today" on the server: overdue is a browser concern (G2-13) | Review |
 | Debug calls | No `dd`, `dump`, `ray` or `var_dump` | Arch test |
 | Lazy loading | Banned outside production (`Model::preventLazyLoading`) | Tests throw |
 
@@ -54,13 +56,15 @@ The CI-only gates are coverage (`--coverage --min=85` plus the per-directory scr
 | Topic | Rule |
 |---|---|
 | Style | Pest functions (`it()`/`test()`), not PHPUnit classes. `uses(RefreshDatabase::class)` is already bound in `tests/Pest.php`, so don't repeat it |
-| **Naming with AC IDs** | Every test that proves an acceptance criterion **starts with the AC ID**: `it('US-02.AC2 rejects an empty title', …)`. One AC can have several tests, and one test can name several ACs (`US-04.AC2 US-02.AC3 …`). The traceability matrix is built by grepping `US-\d{2}\.AC\d+` in `tests/`. Non-AC tests name the NFR or threat (`NFR-02 …`, `T-04 …`) |
+| **Naming with AC IDs** | Every test that proves an acceptance criterion **starts with the AC ID**: `it('US-02.AC2 rejects an empty title', …)`. One AC can have several tests, and one test can name several ACs (`US-04.AC2 US-02.AC3 …`). The cross-cutting criteria are `CC.AC1` to `CC.AC3` (F-04). The traceability matrix is built by grepping `(US-\d{2}\|CC)\.AC\d+` in `tests/` and `resources/js/**/*.test.ts`. Non-AC tests name the NFR or threat (`NFR-02 …`, `T-04 …`) |
 | Layout | `tests/Feature/Todos/<Action>Test.php`, `tests/Feature/Security/*`, `tests/Arch/ArchTest.php`, `tests/Browser/*`, `tests/Unit/*` (pure PHP logic only, for example `TodoFilter`) |
 | Mutation scope | Each domain test file declares `mutates(<Class>::class)` for the class it proves (ADR-0003) |
-| Data | Use factories and states (data-model.md §4). Use `actingAs($user)`. Use `travelTo()` for date logic. No reliance on seeders |
+| Data | Use factories and states (data-model.md §4). Use `actingAs($user)`. Freeze time with `travelTo()`/`freezeTime()` **before** creating models (F-19). Use explicit titles where order or text is asserted. No reliance on seeders |
+| Inertia write tests | Send `X-Inertia: true` through the `inertia()` helper in `tests/Pest.php` and assert the exact status from contracts §1.1.1 (F-01) |
+| Browser tests | Locate elements by role and accessible name from contracts §6.1, and assert focus by the ids listed there |
 | Prop contracts | One strict `assertInertia` shape test per page, without `etc()` (ADR-0002) |
 | Ownership | Only the QA agent edits `tests/` (governance). Engineers never edit tests. Tests are never skipped, weakened or deleted to get green |
-| Frontend unit | `*.test.ts` next to the module, importing from `vite-plus/test`, for pure TS logic only. No component tests in the MVP (ADR-0003) |
+| Frontend unit | `*.test.ts` next to the module (first one: `resources/js/lib/overdue.test.ts`), importing from `vite-plus/test`, for pure TS logic only, run by `npm run test` (`vp test run`). No component tests in the MVP (ADR-0003). Date tests build `Date`s with the local-time constructor so they pass in any CI timezone |
 
 ## 5. Git, branches, commits and PRs
 | Topic | Rule |

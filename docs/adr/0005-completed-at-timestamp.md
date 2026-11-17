@@ -1,6 +1,6 @@
 # ADR-0005: Store completion as a nullable `completed_at` timestamp
 
-**Status:** Proposed · **Date:** 2026-11-16 · **Approver:** project owner (pending, G2)
+**Status:** Proposed · **Date:** 2026-11-16, revised 2026-11-17 (F-14, F-15, A-18) · **Approver:** project owner (pending, after the G2 blocker re-check)
 
 ## Context
 - US-05.AC1 and AC2 refer to `completed_at` by name: it is set on complete and null on incomplete. US-03.AC4 needs counts for active and completed. US-07 filters on status.
@@ -17,8 +17,9 @@
 **API and props**
 - The API sends a **desired state**, not a toggle: `PATCH /todos/{todo}/completion` with `{ completed: boolean }` (contracts.md).
 - The controller sets `completed_at = now()` when the todo goes from active to completed, and `null` when `completed` is false.
-- Re-sending `completed: true` to a todo that is already completed keeps the original timestamp. This makes the call idempotent, so a double-click or an Inertia retry can't flip the todo back.
-- `TodoResource` exposes both `completed: bool` (derived) and `completed_at: string|null` (ISO 8601), so the UI doesn't have to repeat the null check.
+- Re-sending `completed: true` to a todo that is already completed keeps the original timestamp and flashes the same toast, "Todo completed." (F-14). This makes the call idempotent, so a double-click or an Inertia retry can't flip the todo back.
+- The controller reads `(bool) $request->validated('completed')`, never raw input (A-18). Accepted values are listed in contracts.md §2.
+- `TodoResource` exposes both `completed: bool` (derived) and `completed_at: string|null` (`Y-m-d\TH:i:sP`, F-15), so the UI doesn't have to repeat the null check. The browser's overdue rule uses `completed_at` (G2-13, contracts.md §5.3).
 
 **Counts**
 - Counts use `COUNT(*)` and `COUNT(completed_at)` in one query. Active is total minus completed (data-model.md).

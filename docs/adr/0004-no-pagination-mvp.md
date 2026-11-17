@@ -1,6 +1,6 @@
 # ADR-0004: No pagination in the MVP
 
-**Status:** Proposed · **Date:** 2026-11-16 · **Approver:** project owner (pending, G2)
+**Status:** Proposed · **Date:** 2026-11-16, revised 2026-11-17 (G2-12) · **Approver:** project owner (pending, after the G2 blocker re-check)
 
 ## Context
 - FR-03 and US-03 ask for the user's todos, newest first, with counts for all, active and completed. Pagination appears in no story.
@@ -21,7 +21,7 @@ The query-count equality test (1 vs 100 todos) and the staging NFR-05 measuremen
 | `->paginate(50)` / `simplePaginate` | Adds UI (pager links, accessible labelling), changes the prop shape, and complicates US-02.AC1 and US-07 for no measured benefit at A1 scale |
 | Cursor pagination / infinite scroll (Inertia `merge` props) | More client complexity and new accessibility problems (focus management on load) |
 | `Inertia::defer()` for the list | A second request, and a more complex query-count test (R-002 §Inertia v3 features) |
-| Hard per-user cap (for example 1,000 todos) | It would be a product rule with no story behind it. Raised as open question Q4 in architecture.md |
+| Hard per-user cap (for example 1,000 todos) | It would be a product rule with no story behind it. Decided at G2 (G2-12): no cap; the `todo-writes` rate limit (120 per minute per user, G2-15) is the brake |
 
 ## Consequences
 **Positive**

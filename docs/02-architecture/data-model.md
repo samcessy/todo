@@ -1,6 +1,6 @@
 # Data model
 
-**Status:** Draft for G2 · **Date:** 2026-11-16 · Changing this after the baseline migration needs owner approval and expand/contract (ADR-0006).
+**Status:** Draft for G2 (revised 2026-11-17: G2-13 overdue in the browser, F-19 factories, A-10 staging seeder) · **Date:** 2026-11-16 · Changing this after the baseline migration needs owner approval and expand/contract (ADR-0006).
 
 ## 1. Entities
 ```
@@ -16,7 +16,7 @@ The kit's other tables are unchanged: `users`, `password_reset_tokens`, `session
 | `user_id` | `$table->foreignId('user_id')->constrained()->cascadeOnDelete()` → `bigint` | no | — | FK to `users.id`, **ON DELETE CASCADE** (US-01.AC5, NFR-11, D8). Never mass-assignable |
 | `title` | `$table->string('title', 255)` → `varchar(255)` | no | — | FR-02: required, at most 255 characters |
 | `description` | `$table->text('description')` → `text` | **yes** | NULL | FR-02: at most 5,000 characters, enforced by validation (`text` avoids a driver-specific varchar length) |
-| `due_date` | `$table->date('due_date')` → `date` | **yes** | NULL | A calendar date with no time and no timezone (Q5) |
+| `due_date` | `$table->date('due_date')` → `date` | **yes** | NULL | A calendar date with no time and no timezone. Overdue is decided in the browser against the user's local date (G2-13, contracts §5.3) |
 | `completed_at` | `$table->timestamp('completed_at')` → `timestamp(0) without time zone` (pgsql) | **yes** | NULL | ADR-0005. Completed if and only if NOT NULL. Stored in UTC (`app.timezone`) |
 | `created_at`, `updated_at` | `$table->timestamps()` | yes (Laravel default) | NULL | `created_at` drives "newest first" |
 
@@ -63,7 +63,7 @@ This follows the kit's Laravel 13 attribute style (`#[Fillable]`, `#[Hidden]` on
 | Casts (`casts()` method) | `'due_date' => 'date'`, `'completed_at' => 'datetime'`. The kit sets `Date::use(CarbonImmutable::class)`, so both cast to `CarbonImmutable` |
 | Relationships | `user(): BelongsTo<User, $this>`. On `User`: `todos(): HasMany<Todo, $this>` |
 | Scopes | `#[Scope] active(Builder $q)` → `whereNull('completed_at')`; `#[Scope] completed(Builder $q)` → `whereNotNull('completed_at')`. The `#[Scope]` attribute style is documented at https://laravel.com/docs/13.x/eloquent#local-scopes |
-| Helpers | `isCompleted(): bool`; `isOverdue(CarbonInterface $today): bool` → `! $this->isCompleted() && $this->due_date !== null && $this->due_date->lt($today->startOfDay())` |
+| Helpers | `isCompleted(): bool`. **No server-side `isOverdue()`** (G2-13): the server has no reliable notion of the user's "today", so overdue lives in `resources/js/lib/overdue.ts` |
 | Serialisation | The model is never sent to the client directly. `TodoResource` defines the wire shape (contracts.md §5) |
 | Strictness | `Model::preventLazyLoading()` and `Model::preventSilentlyDiscardingAttributes()` when not in production (AppServiceProvider) |
 
@@ -75,25 +75,32 @@ This follows the kit's Laravel 13 attribute style (`#[Fillable]`, `#[Hidden]` on
   'description' => $this->description,
   'due_date' => $this->due_date?->toDateString(),        // 'YYYY-MM-DD' | null
   'completed' => $this->isCompleted(),
-  'completed_at' => $this->completed_at?->toIso8601String(),
-  'is_overdue' => $this->isOverdue(now()),
+  'completed_at' => $this->completed_at?->toIso8601String(),   // 'Y-m-d\TH:i:sP'
   'created_at' => $this->created_at?->toIso8601String(),
 ]
 ```
-`user_id` and `updated_at` are deliberately left out.
+`user_id`, `updated_at` and any `is_overdue` field are deliberately left out (7 keys, contracts §5.1).
 
 ## 4. Factory `Database\Factories\TodoFactory`
+**Rule (F-19):** states that depend on the clock are written as closures, so they are evaluated when the model is made, not when the state is defined. Tests that use time freeze it with `travelTo()` / `freezeTime()` **before** creating models. Tests that assert order or text use explicit titles instead of Faker titles.
+
 | State | Attributes | Used by |
 |---|---|---|
 | default | `user_id => User::factory()`, `title => fake()->sentence(4)`, `description => null`, `due_date => null`, `completed_at => null` | most tests |
-| `completed()` | `completed_at => now()` | US-03.AC4, US-05.AC2, US-07 |
+| `completed()` | `completed_at => fn () => now()` | US-03.AC4, US-05.AC2, US-07 |
+| `completedAt(CarbonInterface $t)` | `completed_at => $t` | ADR-0005 idempotency test (fixed timestamp) |
 | `withDescription()` | `description => fake()->paragraph()` | US-04 |
-| `dueOn(string $date)` | `due_date => $date` | US-03.AC5 |
-| `overdue()` | `due_date => today()->subDay()`, `completed_at => null` | US-03.AC5, FR-08 |
-| `dueToday()` | `due_date => today()` (not overdue, a boundary case) | FR-08 boundary, mutation |
+| `dueOn(string $date)` | `due_date => $date` | US-02, US-04 |
+| `overdue()` | `due_date => '2000-01-01'`, `completed_at => null` (a fixed past date, overdue in every timezone and on every day) | US-03.AC5 browser test |
 | `createdAt(CarbonInterface $t)` | `created_at => $t` | US-03.AC2 ordering |
 
-Owner is set with `->for($user)` (standard factory relationship). The `DatabaseSeeder` creates one verified demo user with about 10 todos in mixed states. It is used for staging only (ADR-0006: synthetic data).
+The former `dueToday()` boundary state is dropped: the overdue boundary is now unit-tested in TypeScript (contracts §5.3).
+
+Owner is set with `->for($user)` (standard factory relationship).
+
+**Seeders (A-10, security.md T-25)**
+- The kit's `DatabaseSeeder` (`test@example.com` / `password`, built with factories) is for **local development only** and never runs on Cloud.
+- `StagingSeeder` creates one verified demo user whose password comes from the Cloud env var `STAGING_DEMO_PASSWORD`, plus **100 todos** in mixed states (active, completed, some due `2000-01-01`) for the NFR-05 measurement. It uses literal arrays, not factories, because `fakerphp/faker` is a dev dependency that is absent after `composer install --no-dev`. It throws when `app()->isProduction()` or when the variable is missing. The owner runs it once per staging database (`php artisan db:seed --class=StagingSeeder --force` from the Cloud console); it is never part of the deploy command.
 
 ## 5. Data lifecycle and privacy
 - **Account deletion** (kit `profile.destroy`, password confirmed) deletes the user row. The FK cascade removes every todo (NFR-11). The kit already logs out and invalidates the session. We add `Inertia::clearHistory()` (security.md).

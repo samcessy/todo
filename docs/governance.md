@@ -19,7 +19,9 @@ AI drafts, deterministic tools verify, and humans decide.
 **Approver:** the project owner, as a single approver (decision D6 in `00-product/assumptions.md`).
 The compensating control is that the AI QA and AI security reviews are mandatory inputs to G4 and G5.
 
-**Identities (G1-1):** agents push and open PRs as a separate low-privilege bot GitHub account.
+**Identities (G1-1, G2-5):** agents push and open PRs as a separate low-privilege bot GitHub account,
+using a classic PAT with only the `public_repo` scope (no `workflow` scope, 90-day expiry) and no SSH keys,
+so the bot cannot change `.github/workflows/*`. *(Token type pending owner confirmation at the G2 re-check.)*
 The owner reviews and merges as themselves. The owner's own `gh` login is never available in agent sessions.
 
 **Production release (G1-2):** CI deploys staging. Production is deployed only by the owner, who triggers
@@ -50,13 +52,20 @@ in the task file. It does not improvise.
 - PRs are limited to about 400 changed lines.
 - Engineer agents never edit `tests/`. The QA agent never edits `app/` or `resources/js/` (except `*.spec.ts`).
 
+## Exceptions
+
+| ID | Rule excepted | Scope | Approved | Conditions |
+|---|---|---|---|---|
+| E-1 | "Never delete tests" | Delete `tests/Feature/DashboardTest.php` (replaced 1:1 by `IndexTest`: US-01.AC1 plus 200 for a verified user) and retarget 6 kit assertions from `dashboard` to `todos.index` | Owner, G2-8, 2026-11-17 | Done by the QA agent in one dedicated task with `human_approval_required: [E-1]`; reviewed at G4 |
+
 ## Enforcement
 
 | Rule | How it is enforced | Strength |
 |---|---|---|
 | `.env` access, push to main, force push, destructive DB commands, `gh pr merge`/`secret` | `.claude/settings.json` deny and ask rules | Best-effort: Bash rules can be bypassed by unusual command forms or scripts. A sandbox is planned |
-| Push to `main`, merge approval | GitHub branch protection: PR required, 1 approval, required checks (T-002). Bot identity (G1-1) | **Authoritative** |
-| Production deploy | Owner-held deploy hook (G1-2) | **Authoritative**: agents never have the hook |
+| Push to `main`, merge approval | GitHub branch protection: PR required, 1 approval, required checks, **no bypass** (free on the public repo; T-002). Bot identity (G1-1) | **Authoritative** |
+| Workflow changes / secret exfiltration | Bot token without `workflow` scope + CI `workflow-lint` + `staging` Environment secret limited to `main` (G2-5) | **Authoritative** |
+| Production deploy | Owner-held deploy hook (G1-2) | **Authoritative while custody holds**: agents never have the hook. Never paste it into an agent-visible shell (shell history, A-16) |
 | Agent role scopes | PreToolUse `.claude/hooks/path-guard.sh` + `scopes.json` (routes on `agent_type`; protects `.claude/settings.json` and hooks from every agent, including the main session) | Best-effort for Bash writes; reliable for Edit/Write |
 | Task scopes (`scope.paths`) | CI scope check: the PR's changed files must match the task's `scope.paths` (T-002) | **Authoritative** |
 | Raw HTML in templates | CI `vue/compiler-sfc` check (ADR-0003) | **Authoritative** |
