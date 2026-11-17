@@ -222,7 +222,7 @@ export function isOverdue(dueDate: string | null, completedAt: string | null, to
 // = dueDate !== null && completedAt === null && dueDate < today   (lexical order of ISO dates = calendar order)
 ```
 - `pages/todos/Index.vue` computes `today = localToday()` once per page render and passes it to `TodoItem`. A page left open across midnight updates on the next visit (accepted).
-- **Unit tests** (`resources/js/lib/overdue.test.ts`, `vp test run`, imports from `vite-plus/test`): due yesterday and active → true; due today → false; due tomorrow → false; due yesterday and completed → false; null due date → false; month and year boundaries (`2026-02-28` vs `2026-03-01`, `2025-12-31` vs `2026-01-01`); `localToday(new Date(2026, 2, 10, 0, 30))` → `'2026-03-10'` and `localToday(new Date(2026, 2, 9, 23, 59))` → `'2026-03-09'` (the local-time constructor makes these deterministic in any CI timezone).
+- **Unit tests** (`resources/js/lib/overdue.spec.ts`, QA-owned per coding-standards §4, `vp test run`, imports from `vite-plus/test`): due yesterday and active → true; due today → false; due tomorrow → false; due yesterday and completed → false; null due date → false; month and year boundaries (`2026-02-28` vs `2026-03-01`, `2025-12-31` vs `2026-01-01`); `localToday(new Date(2026, 2, 10, 0, 30))` → `'2026-03-10'` and `localToday(new Date(2026, 2, 9, 23, 59))` → `'2026-03-09'` (the local-time constructor makes these deterministic in any CI timezone).
 - **Browser test** `US-03.AC5`: a todo due `2000-01-01` shows the text "Overdue"; one due `2099-12-31` and a completed one due `2000-01-01` do not. No time travel is needed.
 
 ## 6. Pages and components
@@ -306,7 +306,7 @@ Implementation note: F-b, F-d, F-h and F-j run in the visit's `onSuccess` callba
 | US-03.AC2 | `todos.index` | `TodoList` | `Feature/Todos/IndexTest` → `US-03.AC2` |
 | US-03.AC3 | `todos.index` | `TodoEmptyState` (U-20 to U-22, F-l) | `Feature/Todos/IndexTest` (empty `todos`) + `Browser/TodoJourneyTest` → `US-03.AC3` |
 | US-03.AC4 | `todos.index` (`counts`) | `TodoFilterNav` (U-19) | `Feature/Todos/IndexTest` + `Browser/TodoJourneyTest` → `US-03.AC4` |
-| US-03.AC5 | `todos.index` (`due_date`, `completed_at`) | `TodoItem` (U-11), `lib/overdue.ts` | `resources/js/lib/overdue.test.ts` (`vp test`) + `Browser/TodoJourneyTest` → `US-03.AC5` |
+| US-03.AC5 | `todos.index` (`due_date`, `completed_at`) | `TodoItem` (U-11), `lib/overdue.ts` | `resources/js/lib/overdue.spec.ts` (`vp test`) + `Browser/TodoJourneyTest` → `US-03.AC5` |
 | US-03.AC6 | `todos.index` | — | `Feature/Todos/QueryCountTest` → `US-03.AC6` |
 | US-04.AC1–AC2 | `todos.update` | `TodoEditDialog` (U-14, U-15) | `Feature/Todos/UpdateTest` → `US-04.AC1`, `US-04.AC2` |
 | US-04.AC3 | `todos.update` | — | `Feature/Todos/AuthorizationTest` → `US-04.AC3` |
@@ -321,3 +321,5 @@ Implementation note: F-b, F-d, F-h and F-j run in the visit's `onSuccess` callba
 | **CC.AC1** (every interactive control has an accessible name and visible focus) | all | §6.1 names | `Browser/AccessibilityTest` → `CC.AC1` (`assertNoAccessibilityIssues()` over the state list in ADR-0003, plus the focus-visible probe) |
 | **CC.AC2** (validation errors next to the field, linked by `aria-describedby`) | `todos.store`, `todos.update` | U-07, F-c, F-f | `Browser/TodoJourneyTest` → `CC.AC2` (the input's `aria-describedby` resolves to an element containing the error text) |
 | **CC.AC3** (no user content rendered as raw HTML) | — | all | `npm run check:html` fixture tests + `Browser/TodoJourneyTest` → `CC.AC3` (literal `<img src=x onerror=alert(1)>` title) |
+
+**Scope of CC.AC1–CC.AC3 (QA re-check N-3).** All three apply to the todo forms **and** to the kit's auth and settings forms (login, register, forgot/reset password, confirm password, two-factor challenge, profile, security/password, delete account). How they are verified differs: the todo forms get the per-field tests in the rows above (U-07, F-c, F-f). The kit forms get **one browser accessibility pass per page**, `assertNoAccessibilityIssues()` in `Browser/AccessibilityTest` over the kit pages in ADR-0003's state list, plus the CC.AC3 raw-HTML check, which scans every `.vue` file. No per-field `aria-describedby` tests are written for kit forms. Owner-visible scope note: axe does not check that an error is linked by `aria-describedby`, so for kit forms that part of CC.AC2 is not asserted (the kit's `InputError` linkage is UNVERIFIED; T-001 records the baseline, and a gap is fixed or owner-approved like any other kit accessibility finding).

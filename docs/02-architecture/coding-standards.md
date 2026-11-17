@@ -56,7 +56,7 @@ The CI-only gates are coverage (`--coverage --min=85` plus the per-directory scr
 | Topic | Rule |
 |---|---|
 | Style | Pest functions (`it()`/`test()`), not PHPUnit classes. `uses(RefreshDatabase::class)` is already bound in `tests/Pest.php`, so don't repeat it |
-| **Naming with AC IDs** | Every test that proves an acceptance criterion **starts with the AC ID**: `it('US-02.AC2 rejects an empty title', …)`. One AC can have several tests, and one test can name several ACs (`US-04.AC2 US-02.AC3 …`). The cross-cutting criteria are `CC.AC1` to `CC.AC3` (F-04). The traceability matrix is built by grepping `(US-\d{2}\|CC)\.AC\d+` in `tests/` and `resources/js/**/*.test.ts`. Non-AC tests name the NFR or threat (`NFR-02 …`, `T-04 …`) |
+| **Naming with AC IDs** | Every test that proves an acceptance criterion **starts with the AC ID**: `it('US-02.AC2 rejects an empty title', …)`. One AC can have several tests, and one test can name several ACs (`US-04.AC2 US-02.AC3 …`). The cross-cutting criteria are `CC.AC1` to `CC.AC3` (F-04). The traceability matrix is built by grepping `(US-\d{2}\|CC)\.AC\d+` in `tests/` and `resources/js/**/*.spec.ts`. Non-AC tests name the NFR or threat (`NFR-02 …`, `T-04 …`) |
 | Layout | `tests/Feature/Todos/<Action>Test.php`, `tests/Feature/Security/*`, `tests/Arch/ArchTest.php`, `tests/Browser/*`, `tests/Unit/*` (pure PHP logic only, for example `TodoFilter`) |
 | Mutation scope | Each domain test file declares `mutates(<Class>::class)` for the class it proves (ADR-0003) |
 | Data | Use factories and states (data-model.md §4). Use `actingAs($user)`. Freeze time with `travelTo()`/`freezeTime()` **before** creating models (F-19). Use explicit titles where order or text is asserted. No reliance on seeders |
@@ -64,7 +64,7 @@ The CI-only gates are coverage (`--coverage --min=85` plus the per-directory scr
 | Browser tests | Locate elements by role and accessible name from contracts §6.1, and assert focus by the ids listed there |
 | Prop contracts | One strict `assertInertia` shape test per page, without `etc()` (ADR-0002) |
 | Ownership | Only the QA agent edits `tests/` (governance). Engineers never edit tests. Tests are never skipped, weakened or deleted to get green |
-| Frontend unit | `*.test.ts` next to the module (first one: `resources/js/lib/overdue.test.ts`), importing from `vite-plus/test`, for pure TS logic only, run by `npm run test` (`vp test run`). No component tests in the MVP (ADR-0003). Date tests build `Date`s with the local-time constructor so they pass in any CI timezone |
+| Frontend unit | **Rule: frontend unit tests are named `*.spec.ts`** (never `*.test.ts`), next to the module (first one: `resources/js/lib/overdue.spec.ts`). The QA agent owns `resources/js/**/*.spec.ts` and the vue-engineer may not edit them (governance, `.claude/hooks/scopes.json`, QA re-check N-1). Tests import from `vite-plus/test`, for pure TS logic only, run by `npm run test` (`vp test run`). No component tests in the MVP (ADR-0003). Date tests build `Date`s with the local-time constructor so they pass in any CI timezone |
 
 ## 5. Git, branches, commits and PRs
 | Topic | Rule |

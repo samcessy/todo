@@ -64,7 +64,7 @@ in the task file. It does not improvise.
 |---|---|---|
 | `.env` access, push to main, force push, destructive DB commands, `gh pr merge`/`secret` | `.claude/settings.json` deny and ask rules | Best-effort: Bash rules can be bypassed by unusual command forms or scripts. A sandbox is planned |
 | Push to `main`, merge approval | GitHub branch protection: PR required, 1 approval, required checks, **no bypass** (free on the public repo; T-002). Bot identity (G1-1) | **Authoritative** |
-| Workflow changes / secret exfiltration | Bot token without `workflow` scope + CI `workflow-lint` + `staging` Environment secret limited to `main` (G2-5) | **Authoritative** |
+| Workflow changes / secret exfiltration | Bot token without `workflow` scope + CI `workflow-lint` (no `secrets.*` outside the staging deploy job) + `staging` Environment secret limited to `main` (G2-5) | **Authoritative while the owner alone holds the bot account's password, 2FA seed and recovery codes** |
 | Production deploy | Owner-held deploy hook (G1-2) | **Authoritative while custody holds**: agents never have the hook. Never paste it into an agent-visible shell (shell history, A-16) |
 | Agent role scopes | PreToolUse `.claude/hooks/path-guard.sh` + `scopes.json` (routes on `agent_type`; protects `.claude/settings.json` and hooks from every agent, including the main session) | Best-effort for Bash writes; reliable for Edit/Write |
 | Task scopes (`scope.paths`) | CI scope check: the PR's changed files must match the task's `scope.paths` (T-002) | **Authoritative** |

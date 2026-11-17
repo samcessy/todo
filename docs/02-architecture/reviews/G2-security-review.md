@@ -80,3 +80,73 @@ The mapping uses **ASVS 5.0.0** chapters (recommended in B-02), with 4.0.3 equiv
 - The Boost config key names.
 - ASVS level numbers outside 5.0 V3 and 4.0.3 V14 (in particular 4.0.3 V2.1.9 and V3.4.4, and 5.0 6.2.5). Fetch quota ran out. Confirm them when B-02 pins the version.
 - GitHub token workflow-scope semantics: reviewer knowledge, not fetched.
+
+## Re-check (2026-11-17)
+
+**Reviewer:** security-reviewer agent · **Scope:** B-01 to B-05, the architect's new items (bot token substitution, N-01, waiver W-1), and any new blocker introduced by commit `880c796`. Advisories are not re-reviewed.
+**Inputs:** `G2-decision-packet.md` (approved), revised `security.md`, `contracts.md`, `architecture.md`, `data-model.md`, `coding-standards.md`, `docs/adr/0001`–`0006`, `governance.md`, `requirements.md` NFR-01.
+**Sources fetched 2026-11-17:**
+- GitHub PAT docs: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
+- GitHub OAuth scopes: https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps
+- ASVS 5.0.0 V6: https://github.com/OWASP/ASVS/blob/v5.0.0_release/5.0/en/0x15-V6-Authentication.md
+- Public Suffix List: https://publicsuffix.org/list/public_suffix_list.dat
+
+Kit evidence uses the same R-001 spike as before (`kit:`).
+
+### Verdict
+
+**Approve with changes.** All 5 blockers are **RESOLVED** in the docs, and each one names a verifying test or check. No new blocker was found. The changes below are small. They should go into T-23, T-18 and W-1 before the G3 tasks are cut (or before T-001/T-002 at the latest), and none of them needs another gate review. The owner still has to confirm two things in the gate log: the bot token substitution (governance.md marks it "pending owner confirmation") and waiver W-1.
+
+### Blocker status
+
+| ID | Status | Where it is fixed | Verifying test or check |
+|---|---|---|---|
+| B-01 HSTS, HTTPS, cookie prefix | **RESOLVED** | `security.md` T-13: global `SecurityHeaders` with `max-age=31536000; includeSubDomains` outside `local`. T-24: `URL::forceHttps()` plus a 308 for non-secure requests, and `trustProxies`. T-06: `__Host-todo_session`, `Secure`, `Path=/`, no `Domain`. `architecture.md` §1, §5 | `SecurityHeadersTest` (exact HSTS value; also on a 404 and `/up`; absent in `local`), `HttpsRedirectTest`, `SessionCookieTest`. Staging smoke: redirect without a loop, `set-cookie` attributes, client IP |
+| B-02 ASVS version | **RESOLVED** | `requirements.md` NFR-01 pins ASVS **5.0.0** L1. `security.md` header cites tag `v5.0.0_release`. §3 lists every L1 requirement. Accepted gaps go into the waiver table (W-1) | Review only; §3 is the checklist. Wording nit: T-23 calls `uncompromised()` "breached-password check (6.2.4 L1)". In 5.0.0, 6.2.4 (L1) is a check against the top 3,000 common passwords, and the breached-password check is 6.2.12 (L2). HIBP covers both, so the mapping holds, but fix the wording |
+| B-03 Composition rules | **RESOLVED** | `security.md` T-23: `Password::min(12)->uncompromised()`. §3 V6 | `PasswordPolicyTest`: a 12-character lower-case password is accepted, 11 characters is rejected, a breached password is rejected (HIBP faked). Kit tests stay green |
+| B-04 Public mail endpoints | **RESOLVED** | `security.md` T-08. `contracts.md` §1.1 has the limiter code: `auth-public` allows 5/min and 20/h per IP plus 5/h per lower-cased email, on `register.store`, `password.email` and `password.update`. `auth-confirm` allows 6/min per user. `ThrottleAuthEndpoints` is in `web`. I checked the route names against `kit:vendor/laravel/fortify/routes/routes.php:66,70,83,130`. `password.update` is the Fortify reset POST and does not collide with the kit's `user-password.update` | `AuthRateLimitTest`: per IP, per email from rotating `REMOTE_ADDR`, and the oracle routes |
+| B-05 Workflow and token posture | **RESOLVED** (token type substituted; see (a)) | `security.md` T-18 items (1) to (6). `ADR-0006` "Bot token" and "Workflow rules". `governance.md` Enforcement row | CI `workflow-lint` (`check-workflows.mjs` plus fixtures). T-002 checklist: `gh auth status` shows only `public_repo`; a negative push of `.github/workflows/probe.yml` is rejected; `users/<bot>/keys` is `[]`; Actions permissions are read-only; the `staging` environment allows only `main`; there is no repository-level hook secret |
+
+### (a) Classic PAT with `public_repo` instead of a fine-grained PAT
+
+**The architect's reading of GitHub's docs is correct, and I endorse the substitution.**
+- The PAT page lists these fine-grained PAT limitations: they can't be used "to contribute to public repos where the user is not a member", or to repositories "where the user is an outside or repository collaborator". It also says "Only personal access tokens (classic) have write access for public repositories that are not owned by you".
+- The bot is a repository collaborator on a repo owned by another personal account (`samcessy`), so a fine-grained PAT cannot work here.
+- The OAuth scopes page says `workflow` "Grants the ability to add and update GitHub Actions workflow files". A classic PAT without that scope is therefore refused when it pushes workflow changes. The negative push test in T-18 proves this on the real repo.
+- `public_repo` grants read and write to "code, commit statuses, repository projects, collaborators, and deployment statuses" on public repos. Because the bot has no admin role, the collaborators part has no effect. PRs work through code access.
+
+Required changes (non-blocking; add them to T-18 and ADR-0006):
+1. **Same-file exception.** The same scopes page says: "Workflow files can be committed without this scope if the same file (with both the same path and contents) exists on another branch in the same repository." T-18 currently *permits* this ("or by the bot only for files that already exist identically on another branch"). Remove that permission: changes to `.github/**` are owner-only. Turn on "Automatically delete head branches" so stale branches don't keep old workflow versions around for the bot to reuse. The residual risk is low, because the hook is an environment secret limited to `main` and the default token is read-only. Even so, the rule should not invite the bypass.
+2. **Custody of the bot account itself.** The PAT's limits mean nothing if an agent can sign in as the bot. With the account's password, 2FA or recovery codes, it could add an SSH key, or run `gh auth login` and get a token with `workflow` scope. Add to T-18 and the T-002 checklist: the bot's password, 2FA seed and recovery codes are held only by the owner (password manager), never on the agent machine in a readable form. Turn on 2FA for the bot. Change the governance Enforcement wording to "authoritative while the bot account's credentials stay owner-held".
+3. **Generalise the secret rule in `workflow-lint`.** PR jobs run code the bot can change (composer and npm scripts, tests, the lint scripts themselves). That is safe only while PR jobs have no secrets. Today `check-workflows.mjs` checks only `STAGING_DEPLOY_HOOK`. Make it fail on **any** `secrets.*` reference, apart from `GITHUB_TOKEN`, outside a job that has `environment: staging`.
+
+### (b) N-01: bcrypt 72-byte truncation
+
+**The finding is correct.** `kit:vendor/laravel/framework/src/Illuminate/Hashing/BcryptHasher.php:58` throws only when `limit` is set, and `config/hashing.php:34` defaults `BCRYPT_LIMIT` to `null`. PHP's bcrypt silently uses only the first 72 bytes. ASVS 5.0.0 6.2.8 (L1) says the password must be verified "exactly as received… not altered, such as by truncation". `passwordRules()` covers all 3 paths that set a password: `CreateNewUser`, `ResetUserPassword` and `PasswordUpdateRequest` (checked in the kit).
+
+**Bytes vs characters.** Laravel's `max:72` counts characters (`mb_strlen`), so it would let 72 multibyte characters through, which is up to 288 bytes, all silently truncated. The rule must count **bytes** (`strlen($value) > 72`, as a closure or a small `ValidationRule`). The doc says "byte-length rule", which is right, but it should name the implementation and test a multibyte case explicitly. Example: 24 × `€` (72 bytes, 24 characters) is accepted, and 25 × `€` (75 bytes, 25 characters) is rejected. A pure-ASCII "73-byte" test would also pass if someone wrote `max:72` by mistake. `min(12)` counts characters, which is fine.
+
+**Is it sufficient?** Not fully. Required changes (non-blocking):
+1. **Verification paths.** Login, `current_password` (confirm-password, profile delete, password change) and 2FA confirmation still go through `password_verify`, which truncates. Example: a stored 72-byte password P also accepts P + "anything". There is no real security impact, since the attacker already needs P. But it means 6.2.8 holds only for the paths that set a password. Cheap fix: reject inputs over 72 bytes before verifying. Use a `Fortify::authenticateUsing` guard for login, and add the same byte rule to `currentPasswordRules()` and the confirm-password request. Alternatively, record it as a documented residual in T-23.
+2. **Defence in depth.** Set `BCRYPT_LIMIT=72` (config `hashing.bcrypt.limit`) in every environment. Any path that skips validation (`StagingSeeder`, future code) then throws instead of truncating silently. Note that `STAGING_DEMO_PASSWORD` must be 24 to 72 bytes.
+3. **Information only.** 72 bytes can be as few as 18 characters of 4-byte script. ASVS 6.2.9 ("at least 64 characters permitted") is **L2**, so this is not an L1 gap. If the owner later wants L2 or long passphrases, switch to `argon2id`. Appendix C approves it, and there are no users to migrate yet. Whether the Cloud PHP build includes Argon2 is **UNVERIFIED**.
+4. **Related.** `NotPwnedVerifier::search()` fails **open**: on an HTTP error or timeout it reports the exception and treats the password as not breached (`kit:…/Validation/NotPwnedVerifier.php:83-104`). Since 6.2.4 (L1) relies on it, state this in T-23 as an accepted residual. A local top-common list for passwords of 12+ characters is optional.
+
+### (c) Waiver W-1 (ASVS 3.3.1 for non-session cookies)
+
+**Reasonable, and it is now better supported than the doc says.**
+- **New evidence:** `laravel.cloud` **is on the Public Suffix List** (`public_suffix_list.dat`, entry `laravel.cloud` in the Laravel Holdings section). Other tenants' `*.laravel.cloud` apps are therefore cross-site, and they cannot toss cookies onto staging. This resolves A-14's UNVERIFIED. In production, only subdomains the owner controls could toss cookies.
+- **`XSRF-TOKEN`:** the name is hard-coded (`kit:…/PreventRequestForgery.php:239-242`). Renaming it means subclassing the CSRF middleware and reconfiguring the client's cookie name. That is a CSRF change with more risk than benefit, because a tossed value fails closed.
+- **`remember_web_*`:** renaming needs a custom guard. Waiving it is right.
+- **Cheap partial fix for the two UI cookies:** add `; Secure` when `location.protocol === 'https:'`. That is one line each, in `resources/js/composables/useAppearance.ts:40` and `components/ui/sidebar/SidebarProvider.vue:34`. A `__Secure-` rename would also touch `HandleAppearance.php:19`, `HandleInertiaRequests.php:44`, `bootstrap/app.php:18` and `app.blade.php`, and would break theme persistence on plain-HTTP local dev. That is not worth doing for `light`/`dark` and `true`/`false` values. Recommendation: make the `Secure` change, narrow W-1 to "prefix only" for these two cookies, and keep W-1 as written for `XSRF-TOKEN` and `remember_web_*`. Update W-1's rationale with the PSL fact.
+
+### New blockers
+
+**None.** Notes on the revisions (non-blocking):
+- T-24: the 308 that `SecurityHeaders` sends on non-secure requests depends on `trustProxies`. If Cloud's health check reaches `/up` over internal HTTP, every deploy would fail the check. Exempt `/up` from the redirect, or have the T-002 smoke confirm the health check passes. Staging catches this before production either way.
+- `auth-public`: the per-email key (5 per hour) lets anyone block password reset for a known address for an hour. This is acceptable at L1, but record it in T-08 as an accepted trade-off.
+- The CI-gate scripts (`check-workflows.mjs`, `check-raw-html.mjs`, `coverage-dirs.php`) can be changed by the bot in a PR. CLAUDE.md rule 3 (CI-gate edits need human approval) and the `scope` job cover this. Make sure no engineer task lists them in `scope.paths`.
+
+### Advisories sanity check
+
+`architecture.md` §9 maps A-01 to A-19 and N-01 to doc locations, and lists the rejected items with reasons: the boot-time mailer assertion (A-08) and the `.github/**` ruleset (B-05 item 4, not available on public repos). **OK.**

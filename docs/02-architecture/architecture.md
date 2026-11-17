@@ -86,7 +86,7 @@ Everything else is the unmodified kit (R-001 E12–E17), apart from the edits li
 ```
 app/
   Concerns/TodoValidationRules.php           # shared rules (matches kit's ProfileValidationRules)
-  Concerns/PasswordValidationRules.php       # kit file, edit: 72-byte maximum (security.md T-23)
+  Concerns/PasswordValidationRules.php       # kit file, edit: 72-byte maximum counted with strlen, also on currentPasswordRules() (security.md T-23)
   Enums/TodoFilter.php                       # All|Active|Completed, fromQuery(), apply()
   Http/Controllers/TodoController.php        # index, store, update, destroy
   Http/Controllers/TodoCompletionController.php  # update (sets/clears completed_at)
@@ -118,9 +118,10 @@ routes/settings.php                          # edit: auth.session on the kit's a
 resources/js/
   pages/todos/Index.vue
   components/todos/{TodoCreateForm,TodoList,TodoItem,TodoEditDialog,TodoDeleteDialog,TodoFilterNav,TodoEmptyState}.vue
-  lib/overdue.ts, lib/overdue.test.ts        # isOverdue(), localToday() + vp test (G2-13)
+  lib/overdue.ts, lib/overdue.spec.ts        # isOverdue(), localToday() + vp test (G2-13); *.spec.ts is QA-owned (N-1)
   types/todo.ts                              # + re-export from types/index.ts
   types/global.d.ts                          # edit: InertiaConfig.flashDataType
+  composables/useAppearance.ts:40, components/ui/sidebar/SidebarProvider.vue:34  # edit: `; Secure` on HTTPS (security.md W-1)
 scripts/check-raw-html.mjs, scripts/raw-html-allowlist.json   # NFR-03 (ADR-0003)
 scripts/check-workflows.mjs                  # workflow-lint (security.md T-18, ADR-0003)
 .github/workflows/{ci.yml,deploy-staging.yml,nightly.yml}     # T-002 (owner-reviewed; bot cannot push these)
@@ -164,7 +165,7 @@ These changes go in one dedicated task (QA for the tests, engineer for the rest)
 | Strictness | `preventLazyLoading` and `preventSilentlyDiscardingAttributes` outside production | ADR-0002, ADR-0003 |
 | Dates | Timestamps stored in UTC. `due_date` is a calendar `DATE`. **Overdue is computed in the browser** from the user's local date (G2-13) | data-model.md, contracts §5.3 |
 | Transport and headers | HTTPS enforced, HSTS 1 year, `__Host-` session cookie, basic CSP, global headers middleware (G2-1, A-11, A-12) | security.md T-06, T-13, T-24 |
-| Passwords | `Password::min(12)->uncompromised()`, at most 72 bytes (G2-3) | security.md T-23 |
+| Passwords | `Password::min(12)->uncompromised()`, at most 72 bytes counted with `strlen` (G2-3), `BCRYPT_LIMIT=72` backstop | security.md T-23 |
 | Abuse limits | `todo-writes` 120/min/user (G2-15); `auth-public` and `auth-confirm` on Fortify endpoints (G2-4, A-06) | contracts §1.1, security.md T-08 |
 | Repository and CI | Public repo `github.com/samcessy/todo` (G2-10); bot token without workflow scope; read-only default `GITHUB_TOKEN`; branch protection on `main`; production only by the owner-held hook | ADR-0006, security.md T-16 to T-18 |
 | Optimistic UI | Not in the MVP. Revisit for the completion checkbox if warm p95 exceeds 150 ms (R-002 §Inertia v3) | — |
@@ -196,7 +197,7 @@ The open questions Q1 to Q7 of the first draft were decided at G2. They are no l
 | Q6 Browser-test dependencies | **G2-14:** `pestphp/pest-plugin-browser` and `playwright` approved by accepting ADR-0003 | ADR-0003 |
 | Q7 Write rate limit | **G2-15:** `todo-writes` = 120 per minute per user | contracts §1.1 |
 
-**Still open (not G2 questions):** R-006 mail provider and the error-tracking choice (both before G5); the T-001 spike items listed in ADR-0003 and contracts §1.1.1, §1.2, §3.
+**Still open (not G2 questions):** R-006 mail provider and the error-tracking choice (both before G5); the T-001 spike items listed in ADR-0003 and contracts §1.1.1, §1.2, §3, plus security.md T-24 (the `HttpsRedirectTest` production switch, and Cloud's `/up` health check with the HTTPS redirect).
 
 ## 9. Review dispositions (G2-16)
 Every security advisory (A-01 to A-19) and QA finding (F-01 to F-22) is folded into the docs, except the items in "Rejected review items" below. Blockers B-01 to B-05 are G2-1 to G2-5.
@@ -221,7 +222,7 @@ Every security advisory (A-01 to A-19) and QA finding (F-01 to F-22) is folded i
 | A-11 Basic CSP | security.md T-13 |
 | A-12 Global headers, `X-Powered-By` | security.md T-13 |
 | A-13 Proxies, `APP_URL`, passkey secret | security.md T-09, T-24, ADR-0006 |
-| A-14 Shared staging domain | security.md T-05, T-06 |
+| A-14 Shared staging domain | security.md T-05, T-06; resolved: `laravel.cloud` is on the Public Suffix List (security.md W-1, re-check 2026-11-17) |
 | A-15 Supply chain, cooldown, SHA pins, `persist-credentials` | security.md T-14, T-18, ADR-0006 |
 | A-16 Hook custody runbook | security.md T-17, ADR-0006 (governance wording: orchestrator) |
 | A-17 Boost key names | security.md T-19 |

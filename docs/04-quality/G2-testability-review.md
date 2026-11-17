@@ -191,7 +191,7 @@ Checked and consistent: US-03.AC5 ("browser date") vs contracts §5.3 vs ADR-000
 
 ### Matrix update
 `traceability-matrix.md` has been rewritten to match the revised design:
-- **37 / 37** AC IDs mapped (34 story ACs + `CC.AC1`–`CC.AC3`), in 64 AC rows.
+- **37 / 37** AC IDs mapped (34 story ACs + `CC.AC1`–`CC.AC3`), in 63 AC rows.
 - 0 rows are still blocked by F-findings.
-- 3 rows carry a pending condition: the exact query budget after T-001, the passkey landing check after T-001, and the overdue unit-test file name (N-1).
-- 41 security, NFR and supporting rows, keyed by T-xx, NFR-xx or FR-xx. The UTC guard row is removed.
+- 4 rows carry a pending condition: the exact query budget after T-001, the passkey landing check after T-001, and the two overdue unit-test rows (file name, N-1).
+- 44 security, NFR and supporting rows: 36 keyed by a threat ID, 7 by an NFR alone and 1 by FR-01. The UTC guard row is removed.
