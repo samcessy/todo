@@ -13,7 +13,7 @@ defineProps<{
 </script>
 
 <template>
-    <div
+    <main
         class="relative grid h-dvh flex-col items-center justify-center px-8 sm:px-0 lg:max-w-none lg:grid-cols-2 lg:px-0"
     >
         <div
@@ -43,5 +43,5 @@ defineProps<{
                 <slot />
             </div>
         </div>
-    </div>
+    </main>
 </template>

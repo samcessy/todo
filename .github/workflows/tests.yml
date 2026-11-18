@@ -34,5 +34,9 @@ jobs:
       - name: Setup Application
         run: composer setup
 
+      # Interim until T-002's browser job (owner decision, 2026-11-18)
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
       - name: Run CI Checks
         run: composer ci:check
