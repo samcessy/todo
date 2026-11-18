@@ -1,0 +1,7 @@
+[
+    {
+        "file": "resources/js/components/TwoFactorSetupModal.vue",
+        "expr": "qrCodeSvg",
+        "reason": "Fortify-generated QR SVG, no user input (G1-3)"
+    }
+]
