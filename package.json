@@ -8,6 +8,8 @@
         "dev": "vp dev",
         "check": "vp check",
         "check:fix": "vp check --fix",
+        "check:html": "node scripts/check-raw-html.mjs",
+        "check:html:fixtures": "node scripts/check-raw-html.mjs --fixtures tests/fixtures/raw-html",
         "types:check": "vue-tsc --noEmit"
     },
     "dependencies": {

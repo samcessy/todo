@@ -37,13 +37,14 @@ composer test          # pint check → phpstan → pest
 composer lint          # pint (fix)          | composer lint:check  # pint --test
 composer types:check   # phpstan (kit level 7; level 8 and --memory-limit=1G from T-003) | composer ci:check  # full local CI
 npm run check          # Vite+ (oxlint + oxfmt) | npm run check:fix
+npm run check:html     # raw-HTML template check (NFR-03) | npm run check:html:fixtures  # its fixture tests
 npm run types:check    # vue-tsc --noEmit
 npm run build          # production build
 ```
 
 Coverage and mutation gates run in CI only (PCOV is not installed locally).
 Test output may be in agent format (laravel/pao) inside agent sessions.
-`npm run test`, `npm run check:html` and `npm run check:workflows` are added by T-002 and T-004.
+`npm run test` and `npm run check:workflows` are added by T-002.
 
 **Boost in this project (security.md T-19):** the MCP `tinker` and `record-rule` tools are disabled in
 `config/boost.php`, and `php artisan tinker` is denied by `.claude/settings.json`. Ignore the `## Tinker`
