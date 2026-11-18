@@ -95,9 +95,31 @@ vue@3.5.45
 ```
 Drift since R-001 E10 (2026-11-16): framework 13.42.0 → 13.43.0, `laravel/fortify` 1.42.0 → 1.43.0, `pestphp/pest` 5.3.6 → 5.3.7, `laravel/tinker` 3.1.0 → 3.2.0, `laravel/sail` 1.70.0 → 1.71.0; `pestphp/pest-plugin-drift` is no longer installed. No package outside R-001's list.
 
+## Security checks (orchestrator; not the independent review)
+```
+composer audit                          →  no advisories
+npm audit --audit-level=high            →  FAIL: 17 high, 0 critical, all from ONE advisory:
+    GHSA-fc5q-39xc-vjpf, picomatch ReDoS through repeated extglobs, CVSS 7.5, affects <=4.0.7
+    installed: picomatch 4.0.7 (x4), 2.3.2 (x1); latest published = 4.0.7, so NO patched version exists
+    reached through vite-plus, vitest, laravel-vite-plugin, @inertiajs/vite, @tailwindcss/vite, @vitejs/plugin-vue, vue-tsc
+    npm's suggested fixes are major downgrades (vite-plus 0.1.24, laravel-vite-plugin 2.1.0): not usable
+npm audit --omit=dev --audit-level=high →  FAIL as well: the kit lists laravel-vite-plugin and @inertiajs/vite under "dependencies"
+grep -rl picomatch public/build         →  nothing: the browser bundle does not contain it
+git ls-files: no .env, *.sqlite or auth.json tracked; git grep for APP_KEY values, GitHub tokens, hook URLs, private keys → nothing
+```
+**Assessment:** picomatch runs only at build and dev time, on glob patterns written by us and the tool authors, so the ReDoS needs an attacker-controlled pattern that does not exist here. Runtime exposure: none. **But** the CI `audit` job (NFR-04, `npm audit --audit-level=high`) will fail on every PR from T-002 on.
+
+**Owner decision needed (security.md T-14: a high advisory with no fix is escalated within 2 days).** Options:
+- **A (recommended):** a time-boxed, owner-approved exception for exactly `GHSA-fc5q-39xc-vjpf`. T-002's `audit` job runs `npm audit --json` and fails on any high or critical advisory **except** IDs listed in a committed allow-list with an expiry date (30 days), the reason and the approver. The exception expires on its own; Dependabot security updates raise the fix PR when picomatch is patched. Recorded in `governance.md` as exception E-2.
+- **B:** keep the audit strict and leave the `audit` check failing (not required) until upstream ships a fix. Simpler, but a red required check is the habit we want to avoid.
+
+**Independent security review:** not run yet. The global Definition of Done (§4.8) asks for `T-001-security.md` because the import touches `app/`, `config/` and `.github/`. The non-kit changes are `config/boost.php` and `.gitignore`; the rest is upstream kit code.
+
 ## Open questions / follow-ups
 1. **Owner:** create the local `.env`: `cp .env.example .env && php artisan key:generate` (or copy `../todo-scaffold/.env`), then add the three `.env.example` lines. Then `php artisan test` should give 42 passed.
 2. **T-005:** re-verify the Fortify line references in the G2 docs (`fortify/routes/routes.php:64-83`, verified on 1.42.0) against 1.43.0.
 3. **T-003:** the 10 level-8 errors above; `composer types:check` needs `--memory-limit=1G`.
 4. **T-002:** replaces the kit's `tests.yml` (Node 22) with the ADR-0003 jobs on Node 26 and extends Dependabot to `composer` and `npm`.
 5. `/Users/air/code/todo-scaffold` can be deleted once this PR is merged.
+6. **Owner:** decide option A or B for GHSA-fc5q-39xc-vjpf (above), before T-002.
+7. **Owner:** run the independent security review on this PR now, or waive it for the upstream kit code (then only `config/boost.php` and `.gitignore` are reviewed at G4).
