@@ -80,6 +80,7 @@ Layers:
 | US-07.AC3 | Browser | tests/Browser/TodoJourneyTest.php | `US-07.AC3 navigates to /todos?filter=active, /todos?filter=completed and /todos (no query string for All) and keeps the filter after reload` | contracts §3 link targets (F-17), §6.1 U-19 | Planned |
 | US-07.AC4 | Browser | tests/Browser/TodoJourneyTest.php | `US-07.AC4 sets aria-current="page" on the current filter link only and keeps focus on the activated link` | contracts §3, §6.1 U-19, focus F-k | Planned |
 | CC.AC1 | Browser | tests/Browser/AccessibilityTest.php | `CC.AC1 has no accessibility issues at moderate or above on the kit page` (dataset: 8 kit page states × light/dark; `assertNoAccessibilityIssues(2)` + `assertNoJavaScriptErrors()`); todo states added by T-018 | ADR-0003 browser row (state list, F-12); contracts §7 | Passing for kit pages (T-006: 16/16 light and dark after `24c1d3a6`; todo states in T-018) |
+| CC.AC1 | Browser | tests/Browser/AccessibilityTest.php | `CC.AC1 appearance toggle labels meet 4.5:1 contrast in light and dark mode` (dataset: light/dark; direct WCAG ratio per toggle label via `script()`, because the bundled axe 4.10.3 misses it) | WCAG 2.2 AA 1.4.3; test-strategy §6 (axe version lag); Lighthouse finding 2026-11-18 | Failing (red, `0c9593a4`): light "Light"/"Dark" 4.35:1; dark passes |
 | CC.AC1 | Browser | tests/Browser/AccessibilityTest.php | `CC.AC1 shows a visible focus indicator on every interactive control on /todos` (focus-visible probe: computed `outline-style` or `box-shadow` is not `none`) | ADR-0003 browser row; contracts §7 | Planned |
 | CC.AC1 | Browser | tests/Browser/AccessibilityTest.php | `CC.AC1 locates every §6.1 control by its role and accessible name and focuses nothing on page load` | contracts §6.1 U-01 to U-22, focus F-a | Planned |
 | CC.AC2 | Browser | tests/Browser/TodoJourneyTest.php | `CC.AC2 shows create-form errors in #todo-create-<field>-error, sets aria-invalid and aria-describedby on the field, and focuses the first invalid field` | contracts §6.1 U-07, focus F-c; §7 | Planned |
@@ -87,7 +88,7 @@ Layers:
 | CC.AC3 | CI check | scripts/check-raw-html.mjs + tests/fixtures/raw-html/*.vue (`npm run check:html`) | `CC.AC3 fails on v-html, :innerHTML and :outerHTML outside the allow-list` (fixture run) | ADR-0003 NFR-03 row; security.md T-03; NFR-03 | Planned |
 | CC.AC3 | Browser | tests/Browser/TodoJourneyTest.php | `CC.AC3 renders the title <img src=x onerror=alert(1)> as literal text without JavaScript errors` | security.md T-03; contracts §7 | Planned |
 
-**Coverage:** **37 of 37** AC IDs mapped (34 story ACs + `CC.AC1`–`CC.AC3`), in 63 rows. No row is blocked by an open G2 finding. Two rows have a pending condition (the overdue file name was resolved by N-1, renamed to `overdue.spec.ts`): the passkey check (T-001 feasibility), the exact query budget (T-001 confirms "2"), and the two overdue unit-test rows (file name pending N-1, G2 re-check).
+**Coverage:** **37 of 37** AC IDs mapped (34 story ACs + `CC.AC1`–`CC.AC3`), in 64 rows. No row is blocked by an open G2 finding. Two rows have a pending condition (the overdue file name was resolved by N-1, renamed to `overdue.spec.ts`): the passkey check (T-001 feasibility), the exact query budget (T-001 confirms "2"), and the two overdue unit-test rows (file name pending N-1, G2 re-check).
 
 ## Security, NFR and supporting tests
 
