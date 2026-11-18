@@ -88,5 +88,101 @@
         "file": "safe-v-html-as-text.vue",
         "as": "resources/js/components/HelpText.vue",
         "expect": "pass"
+    },
+    {
+        "name": "T-03 fails el.innerHTML assignment in a .js file under resources/js (security review B-1)",
+        "file": "js-innerhtml.js",
+        "as": "resources/js/lib/render-title.js",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails a JSX innerHTML={...} prop in a .tsx render component (security review B-1)",
+        "file": "tsx-innerhtml-prop.tsx",
+        "as": "resources/js/components/TodoTitleCell.tsx",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails a JSX innerHTML={...} prop in a .jsx render component (security review B-1)",
+        "file": "jsx-innerhtml-prop.jsx",
+        "as": "resources/js/components/TodoBodyCell.jsx",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails document.write in a .mts file (security review B-1)",
+        "file": "mts-document-write.mts",
+        "as": "resources/js/lib/write-title.mts",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 passes a .vue.bak file under resources/js because it is not a bundled source extension (fixture mode applies the repo-mode extension filter to `as`; security review B-1)",
+        "file": "unbundled-vue-bak.vue.bak",
+        "as": "resources/js/components/TodoOld.vue.bak",
+        "expect": "pass"
+    },
+    {
+        "name": "T-03 fails el.setHTMLUnsafe in a .ts file (security review A-2)",
+        "file": "ts-set-html-unsafe.ts",
+        "as": "resources/js/lib/set-title-unsafe.ts",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails Document.parseHTMLUnsafe in a .ts file (security review A-2)",
+        "file": "ts-parse-html-unsafe.ts",
+        "as": "resources/js/lib/parse-title.ts",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails Range.createContextualFragment in a .ts file (security review A-2)",
+        "file": "ts-create-contextual-fragment.ts",
+        "as": "resources/js/lib/fragment-title.ts",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails an iframe srcdoc assignment in a .ts file (security review A-2)",
+        "file": "ts-srcdoc-assignment.ts",
+        "as": "resources/js/lib/preview-title.ts",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails DOMParser.parseFromString in a .ts file (security review A-2, borderline sink treated as fail)",
+        "file": "ts-domparser.ts",
+        "as": "resources/js/lib/title-nodes.ts",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails a :srcdoc binding on an iframe in a template (security review A-2)",
+        "file": "iframe-bind-srcdoc.vue",
+        "as": "resources/js/components/TodoPreviewFrame.vue",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 passes an iframe with an ordinary :src and :title binding (guards against an over-broad srcdoc match)",
+        "file": "safe-iframe-src.vue",
+        "as": "resources/js/components/TodoEmbed.vue",
+        "expect": "pass"
+    },
+    {
+        "name": "T-03 fails :inner-h-t-m-l.camel, which Vue camelizes to the innerHTML prop (security review A-3)",
+        "file": "bind-camel-inner-h-t-m-l.vue",
+        "as": "resources/js/components/TodoCamelTitle.vue",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails any dynamic v-bind argument :[attr], whatever its value, because it cannot be resolved statically (security review A-3)",
+        "file": "bind-dynamic-arg.vue",
+        "as": "resources/js/components/TodoDynamicAttr.vue",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails a .vue file whose template is external (<template src>), because there is no parsed tree to verify (security review A-4)",
+        "file": "template-src-external.vue",
+        "as": "resources/js/components/TodoExternalTemplate.vue",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails a .vue file whose template uses a non-HTML lang (pug), because there is no parsed tree to verify (security review A-4)",
+        "file": "template-lang-pug.vue",
+        "as": "resources/js/components/TodoPugTemplate.vue",
+        "expect": "fail"
     }
 ]
