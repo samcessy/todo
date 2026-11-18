@@ -129,6 +129,7 @@ return [
     |
     */
 
-    'browser_log_levels' => explode(',', env('BOOST_BROWSER_LOG_LEVELS', 'error,warning,info,debug')),
+    // Fixed list instead of env(): env() may return bool, which explode() rejects (PHPStan level 8, T-003)
+    'browser_log_levels' => ['error', 'warning', 'info', 'debug'],
 
 ];
