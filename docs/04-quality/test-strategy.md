@@ -61,9 +61,9 @@
 
 ## 6. Browser tests
 
-- **Locators** come from contracts §6.1: role plus exact accessible name (`U-xx`). No CSS-class or DOM-structure locators.
+- **Locators** come from contracts §6.1: role plus exact accessible name (`U-xx`). No CSS-class or DOM-structure locators. With the plugin, write them as Playwright role selectors, e.g. `$page->press('internal:role=button[name="Add todo"s]')` (`s` = exact, case-sensitive). Plain text (`press('Delete account')`) falls back to the first exact text match, which can be a heading or link rather than the button (T-006).
 - **Focus** is asserted by the id of `document.activeElement` (`F-x`), through the API T-006 records in §8.
-- **Accessibility scan:** `assertNoAccessibilityIssues()` at level 2 (moderate) and `assertNoJavaScriptErrors()` on every ADR-0003 state, in light and dark. Kit pages from T-006; todo states from T-018.
+- **Accessibility scan:** `assertNoAccessibilityIssues()` at level 2 (moderate) and `assertNoJavaScriptErrors()` on every ADR-0003 state, in light and dark. Kit pages from T-006; todo states from T-018. Appearance: the kit defaults to `system` (cookie `appearance` unset), so `visit($url)->inLightMode()` / `->inDarkMode()` (browser `colorScheme`) drives the `dark` class on `<html>`; the test asserts the class. Await `document.getAnimations()` before the scan (§8 row 11).
 - **Focus-visible probe:** Tab through `/todos`; each focused element has a computed `outline-style` or `box-shadow` other than `none`.
 - **Matrix:** Chromium (desktop and mobile viewport) on every PR; Firefox and WebKit on `main` and nightly.
 - **Flaky tests.** A browser test that fails and then passes on retry with no code change is a flake. The QA agent reports it in the task file and escalates to the owner; it is never skipped or marked non-blocking by an agent. ADR-0003's revisit trigger (more than 1 spurious failure per 20 runs) is the owner's call.
@@ -85,7 +85,7 @@ Each CI script has fixtures with an `expected.json` of verdicts, run by a fixtur
 
 ## 8. Facts recorded by the spikes
 
-Filled in by T-005 and T-006 before any task that depends on them. Each entry has a working code sample.
+Filled in by T-005 and T-006 before any task that depends on them. Each entry has a working code sample. T-006 paths are relative to `vendor/pestphp/pest-plugin-browser/` (v5.2.0, with `playwright` 1.65.1).
 
 | # | Fact | Recorded by | Value |
 |---|---|---|---|
@@ -96,12 +96,12 @@ Filled in by T-005 and T-006 before any task that depends on them. Each entry ha
 | 5 | Password change: does the changing session stay logged in? | T-005 | _pending_ |
 | 6 | Passkey landing test feasible? | T-005 | _pending_ |
 | 7 | `vp test run` includes `*.spec.ts`; passes `--passWithNoTests` | T-005, T-002 | _pending_ |
-| 8 | Reading `document.activeElement` attributes in the browser plugin | T-006 | _pending_ |
-| 9 | Key presses `Tab`, `Shift+Tab`, `Escape`, `Space` | T-006 | _pending_ |
-| 10 | Exact 320 px viewport or the `iPhone SE` preset | T-006 | _pending_ |
-| 11 | Accessibility engine and rule tags | T-006 | _pending_ |
-| 12 | Browser test origin is a secure context (history encryption) | T-006 | _pending_ |
-| 13 | Kit inputs link errors with `aria-describedby` (RR-3 baseline) | T-006 | _pending_ |
+| 8 | Reading `document.activeElement` attributes in the browser plugin | T-006 | **Supported.** `$page->script('() => document.activeElement?.id')` returns the value (`Api/Webpage.php:86` → `Playwright/Page.php:353` `evaluate`); `$page->assertScript('document.activeElement.id', 'email')` asserts it (`Api/Concerns/MakesElementAssertions.php`). Demonstrated by `HarnessTest` → `NFR-06 reads document.activeElement attributes through script()` |
+| 9 | Key presses `Tab`, `Shift+Tab`, `Escape`, `Space` | T-006 | **Supported** through `$page->keys($selector, $key or [$keys])`, Playwright key names (`Api/Concerns/InteractsWithElements.php:48`). `keys()` **focuses the located element before every key** (`Locator::press`, `Playwright/Locator.php:215`), so `keys('#a', ['Tab', 'Tab'])` lands on the same element twice. To continue from the current focus, chain on `:focus`: `$page->keys('#first', 'Tab'); $page->keys(':focus', 'Tab'); $page->keys(':focus', 'Shift+Tab');`. `Escape`: `$page->keys('internal:role=dialog', 'Escape')`; `Space`: `$page->keys('#remember', 'Space')`. No page-level `keyboard.press()` is exposed (only `withKeyDown()`, `InteractsWithElements.php:227`); `:focus` covers the need. Demonstrated by the three `HarnessTest` → `NFR-06 presses …` tests |
+| 10 | Exact 320 px viewport or the `iPhone SE` preset | T-006 | **Both supported.** `visit('/todos')->on()->iPhoneSE()` gives 320 × 568, DPR 2, mobile, touch (`Api/On.php:159`, `Enums/Device.php:112`). `$page->resize(320, 568)` sets an exact viewport (`Api/Concerns/InteractsWithViewPort.php`). Both assert `window.innerWidth === 320`. Demonstrated by `HarnessTest` → `NFR-09 opens the page at exactly 320 px with the iPhone SE preset` and `NFR-09 resizes the viewport to exactly 320 px` |
+| 11 | Accessibility engine and rule tags | T-006 | **axe-core 4.10.3**, bundled (`resources/js/axe.min.js`, injected by `Playwright/Page.php:494`). `assertNoAccessibilityIssues()` calls `axe.run()` **with no options** (`Api/Concerns/MakesConsoleAssertions.php:111`), so axe's default rule set runs: every rule enabled by default, i.e. tags `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa` and `best-practice` (off by default in this build, `enabled:!1` in `axe.min.js`: `color-contrast-enhanced`, `meta-refresh-no-exceptions`, `identical-links-same-purpose`, `audio-caption`, `aria-roledescription`, `duplicate-id`, `duplicate-id-active`, and **`target-size` (WCAG 2.2 AA 2.5.8), which is therefore not checked**; `experimental` rules are also off). The level filters by **impact**, inclusive: 0 = critical, 1 = serious (the default), 2 = moderate, 3 = minor (`Enums/AccessibilityIssueLevel.php`, filter at `MakesConsoleAssertions.php:117-123`). **Level 2 fails on critical, serious and moderate**, ignores minor. Best-practice rules such as `region` and `landmark-one-main` are moderate, so they count at level 2. The scan waits for `networkidle` but not for CSS transitions, so `AccessibilityTest` first awaits `document.getAnimations()` (otherwise the welcome page's `@starting-style` fade gives false contrast failures). Demonstrated by `HarnessTest` → `NFR-06 scans with axe-core and level 2 reports moderate issues that level 1 ignores` |
+| 12 | Browser test origin is a secure context (history encryption) | T-006 | **Yes.** The in-process server listens on `http://127.0.0.1:<port>` (`ServerManager.php:30`, `Drivers/LaravelHttpServer.php:250`), and Chromium treats loopback as potentially trustworthy: `window.isSecureContext === true`. `$page->assertScript('window.isSecureContext', true)`. Demonstrated by `HarnessTest` → `T-07 serves browser tests from a secure context origin` (Chromium; Firefox and WebKit are checked when the matrix runs) |
+| 13 | Kit inputs link errors with `aria-describedby` (RR-3 baseline) | T-006 | **No.** After a failed submit on `/login` (wrong password), `/register` (taken email, short password) and `/forgot-password` (unknown email), every input has no `aria-describedby` and no `aria-invalid`; the error text sits in an id-less `<div><p>` from `components/InputError.vue`. Probe: `$page->script("() => [...document.querySelectorAll('input:not([type=hidden])')].map(i => [i.id, i.getAttribute('aria-describedby'), i.getAttribute('aria-invalid')])")`. Recorded only (contracts §7 scope note, RR-3); not asserted as a CC.AC2 test |
 
 ## 9. Test file → task
 
