@@ -79,3 +79,15 @@ Changes to `.claude/settings.json`, `.claude/hooks/*` and `scopes.json` are made
 |---|---|---|---|---|
 | G0 | 2026-11-16 | Project owner | Approved | Decisions D1–D8 accepted as recommended |
 | G1 | 2026-11-16 | Project owner | Approved | All 11 decisions in docs/01-research/G1-decision-packet.md accepted as recommended |
+| G2 | 2026-11-18 | Project owner | Approved | G2-1 to G2-16 approved 2026-11-17 as recommended (G2-10: public repo). Owner confirmations 2026-11-17: classic `public_repo` bot PAT, N-01 72-byte password limit, waiver W-1 (ASVS 3.3.1 for `XSRF-TOKEN`, `remember_web_*`, `appearance`, `sidebar_state`). Security re-check "Approve with changes", all blockers resolved; QA re-check "Testable with changes", F-01 to F-03 resolved. ADR-0001 to 0006 Accepted. Residuals RR-1 to RR-4 accepted by the owner ("accept", 2026-11-18) |
+
+## Accepted residual risks
+
+Security findings closed as "won't fix" with owner approval. Each is revisited if its trigger fires.
+
+| ID | Residual | Accepted | Revisit trigger |
+|---|---|---|---|
+| RR-1 | R-23a: Fortify login and `password.confirm.store` still truncate passwords at 72 bytes (only relevant to a stored password of exactly 72 bytes) | Owner, G2, 2026-11-18 | Fortify adds a hook for login validation, or the hashing algorithm changes |
+| RR-2 | R-23b: `uncompromised()` passes the password if HIBP is unreachable (Laravel default) | Owner, G2, 2026-11-18 | Evidence of HIBP outages being exploited, or ASVS L2 adopted |
+| RR-3 | CC.AC2: `aria-describedby` linkage not asserted on the starter kit's own auth and settings forms (todo forms are tested) | Owner, G2, 2026-11-18 | An accessibility complaint, or the kit forms are edited |
+| RR-4 | T-08: the 5/hour per-email reset limit lets anyone block password reset for a known address for an hour | Owner, G2, 2026-11-18 | A report of reset lockout abuse |
