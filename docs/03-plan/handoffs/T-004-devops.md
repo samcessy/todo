@@ -64,3 +64,33 @@ npm run types:check           →  fail in the worktree, environmental: 38 x TS2
   this task's scope). It needs either an Oxfmt ignore for docs or a one-off `check:fix`, decided before
   `npm run check` becomes a required CI job.
 - QA: traceability rows CC.AC3 / T-03 / NFR-03 can move from Red to Green in verification.
+
+## Security follow-up (2026-11-18)
+
+Source: `docs/03-plan/handoffs/T-004-security.md` (B-1, A-2..A-6) and the QA fixture contract in
+`docs/03-plan/handoffs/T-004-qa.md` → "Security follow-up". The only file changed was `scripts/check-raw-html.mjs`.
+I did not touch `tests/` or the allow-list.
+
+| Finding | Change in `scripts/check-raw-html.mjs` | Rule printed |
+|---|---|---|
+| B-1 | Repo mode now scans every `resources/js` file that matches `/\.(vue\|[cm]?[jt]sx?)$/`. `.vue` gets the SFC walk and everything else gets the script token scan. Fixture mode applies the same filter to each entry's `as` path. A non-matching `as` (`.vue.bak`) is not scanned, so it passes, and the output says "not a bundled source, not scanned". The JSX/TSX `innerHTML={...}` prop is caught by the token scan. `dangerouslySetInnerHTML` was added explicitly, because `\binnerHTML\b` does not match inside it. | `script:<token>` |
+| A-2 | Added the tokens `setHTMLUnsafe`, `parseHTMLUnsafe`, `createContextualFragment`, `srcdoc` and `DOMParser`. They apply to scripts and to every directive expression. A `v-bind`/`:` whose normalised static argument is `srcdoc` fails. `safe-iframe-src.vue` (`:src`, `:title`, `sandbox`) still passes. | `v-bind:srcdoc` |
+| A-3 | Static `v-bind` arguments are normalised before the comparison: a local `camelize` (same regex as `@vue/shared`) when `.camel` is present, then hyphens are stripped and the result is lower-cased. The normalised argument is matched against `innerhtml`/`outerhtml`/`srcdoc`, so `:inner-h-t-m-l.camel` fails. Any dynamic argument (`:[x]`, `v-bind:[x]`) fails, whatever its value. | `v-bind:<arg>`, `v-bind:[dynamic]` |
+| A-4 | A `<template>` with `src`, with a `lang` other than `html`, or that yields no AST fails closed. | `template-unverifiable(src\|lang\|ast)` |
+| A-5 | Done. The generated folders (`actions`, `routes`, `wayfinder`) are skipped only for files that `git ls-files -z -- <dirs>` does not list. The call uses `execFileSync` with fixed arguments: no shell and no network. If git is unavailable or this is not a checkout, nothing is skipped (generated output is scanned) and a note is printed. Probed in a scratch copy: an untracked `routes/evil.ts` is skipped, the same file after `git add -f` fails, and with no git it fails. | as for any other file |
+| A-6 | Not in this task's scope (it covers `security.md` T-18 and `check-scope.mjs`). It stays with the architect/owner and T-002. | n/a |
+
+The ADR-0003 NFR-03 row and `security.md` T-03 still describe the old scope (`*.vue` + `*.ts`, four tokens). The wording
+update belongs to the architect (owner-visible), as the security review notes. The open question about fail-closed for
+unknown extensions stays in the task file and is unchanged. Not done, and out of the fixture contract: `<script src>`
+and token-scanning `{{ }}` interpolations. An external script file under `resources/js` is still scanned on its own.
+
+### Commands run and results
+```
+npm run check:html:fixtures  →  pass, exit 0: 31/31 ok, 0 mismatch(es) (was 20/31)
+npm run check:html           →  pass, exit 0: 200 files (164 .vue, 36 script), 1 allow-listed
+                                resources/js/components/TwoFactorSetupModal.vue:174:41  v-html(allowed)  v-html="qrCodeSvg"
+                                (the new sinks flag no kit code; the kit has only .vue/.ts files today)
+npm run check                →  pass: 102 files formatted, 0 lint warnings in 93 files (scripts/ clean)
+A-5 probe (scratch copy, node_modules symlinked): no git → fail; git + untracked → skipped; git + tracked → fail
+```
