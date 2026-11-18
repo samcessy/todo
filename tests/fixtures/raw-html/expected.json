@@ -1,0 +1,92 @@
+[
+    {
+        "name": "CC.AC3 fails on v-html in an ordinary component (nested element)",
+        "file": "v-html-in-component.vue",
+        "as": "resources/js/components/TodoDescription.vue",
+        "expect": "fail"
+    },
+    {
+        "name": "CC.AC3 fails on a :innerHTML shorthand binding",
+        "file": "bind-innerhtml-shorthand.vue",
+        "as": "resources/js/components/TodoTitle.vue",
+        "expect": "fail"
+    },
+    {
+        "name": "CC.AC3 fails on a v-bind:outerHTML longhand binding",
+        "file": "bind-outerhtml-longhand.vue",
+        "as": "resources/js/components/TodoBadge.vue",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 passes the allow-listed v-html=\"qrCodeSvg\" in TwoFactorSetupModal.vue",
+        "file": "allowlisted-qr-code.vue",
+        "as": "resources/js/components/TwoFactorSetupModal.vue",
+        "expect": "pass"
+    },
+    {
+        "name": "T-03 fails a second v-html in the allow-listed file even when qrCodeSvg is also present",
+        "file": "allowlisted-file-second-v-html.vue",
+        "as": "resources/js/components/TwoFactorSetupModal.vue",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails a non-allow-listed expression in the allow-listed file (file matches, expression does not)",
+        "file": "allowlisted-file-wrong-expr.vue",
+        "as": "resources/js/components/TwoFactorSetupModal.vue",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails the allow-listed expression qrCodeSvg in a different file (expression matches, file does not)",
+        "file": "allowlisted-expr-other-file.vue",
+        "as": "resources/js/components/OtherModal.vue",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails el.innerHTML assignment inside a script setup block",
+        "file": "script-setup-innerhtml.vue",
+        "as": "resources/js/components/TodoPreview.vue",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails insertAdjacentHTML in a .ts file",
+        "file": "ts-insert-adjacent-html.ts",
+        "as": "resources/js/lib/append-title.ts",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails document.write in a .ts file",
+        "file": "ts-document-write.ts",
+        "as": "resources/js/lib/write-title.ts",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails outerHTML assignment in a .ts file",
+        "file": "ts-outerhtml.ts",
+        "as": "resources/js/lib/replace-title.ts",
+        "expect": "fail"
+    },
+    {
+        "name": "T-03 fails the object-spread form v-bind=\"{ innerHTML: x }\" written literally in a template (ADR-0003 known limitation, caught by the grep)",
+        "file": "template-object-spread-innerhtml.vue",
+        "as": "resources/js/components/TodoHeading.vue",
+        "expect": "fail"
+    },
+    {
+        "name": "CC.AC3 passes plain {{ title }} interpolation and an ordinary :title binding",
+        "file": "safe-interpolation-and-binding.vue",
+        "as": "resources/js/components/TodoItem.vue",
+        "expect": "pass"
+    },
+    {
+        "name": "T-03 passes a .ts file that sets textContent",
+        "file": "safe-ts-text-content.ts",
+        "as": "resources/js/lib/set-title.ts",
+        "expect": "pass"
+    },
+    {
+        "name": "T-03 passes a template whose only mention of v-html is text in an HTML comment, an interpolated string and a paragraph (not a directive)",
+        "file": "safe-v-html-as-text.vue",
+        "as": "resources/js/components/HelpText.vue",
+        "expect": "pass"
+    }
+]
