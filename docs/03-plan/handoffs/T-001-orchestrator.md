@@ -30,7 +30,7 @@ phpstan analyse --memory-limit=1G       →  pass at level 7, 0 errors
 phpstan analyse --level=8 --memory-limit=1G →  10 errors (as R-001 predicted), all User|null or Carbon|null:
     Settings/ProfileController.php:33,35,36,39,55; Settings/SecurityController.php:26,34,46,58;
     Requests/Settings/ProfileUpdateRequest.php:31   → T-003
-npm run check                           →  pass
+npm run check                           →  pass in the scaffold folder; in the repo it failed on 71 docs/.claude Markdown and JSON files (no docs in the scaffold). Fixed in a follow-up commit by excluding docs/**, .claude/** and CLAUDE.md from the Vite+ formatter
 npm run types:check                     →  pass
 npm run build                           →  pass
 ```

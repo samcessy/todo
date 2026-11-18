@@ -68,6 +68,10 @@ export default defineConfig({
         htmlWhitespaceSensitivity: 'css',
         ignorePatterns: [
             '.github/**',
+            // Project docs and agent config: hand-formatted tables; .claude/ is owner-only (T-001)
+            '.claude/**',
+            'CLAUDE.md',
+            'docs/**',
             'composer.json',
             'resources/js/components/ui/*',
             'resources/views/mail/*',
