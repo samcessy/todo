@@ -35,3 +35,29 @@ The usual environmental `.env` warning per browser run (no `.env` in this checko
 - QA: re-run the Browser suite in verification mode and record `24c1d3a6` against F-1 to F-5 in the QA handoff; flip the CC.AC1 kit-pages row in the traceability matrix.
 - Owner (unchanged from QA handoff): `PasswordInput` toggle `tabindex="-1"` and RR-3 (`InputError` id / `aria-describedby`) were out of this fix's brief and are not touched.
 - The pre-existing `v-html` in `TwoFactorSetupModal.vue` (kit QR code SVG) needs the owner-approved allow-list for `check:html` (T-002/T-004).
+
+## Follow-up: F-6 appearance toggle (commit b0ff4e11)
+
+### What changed
+- `resources/js/components/AppearanceTabs.vue` (not under `components/ui/*`):
+  - Inactive label colour in light mode: `text-neutral-500` → `text-neutral-600` (Tailwind theme token `--color-neutral-600`, oklch 43.9%). Dark mode classes unchanged.
+  - Selected state (WCAG 4.1.2): the wrapper gets `role="group"` and `aria-label="Appearance"`; each button gets `type="button"` and `:aria-pressed="appearance === value"`. Toggle buttons were chosen over a radio group to keep the change minimal (no arrow-key roving focus needed).
+
+### Contrast (label colour vs group/button background)
+| Mode | Inactive labels | Active label |
+|---|---|---|
+| Light | 7.15:1 (neutral-600 on neutral-100; was 4.349) | unchanged (19.80 per QA) |
+| Dark | unchanged: 5.857 (neutral-400 on neutral-800) | unchanged: 9.51 |
+
+### Tests
+- `CC.AC1 appearance toggle labels meet 4.5:1 contrast in light and dark mode` now passes (both dataset cases). No tests edited.
+- **No test yet for `aria-pressed` / group name.** QA can add one in T-018 (e.g. assert `aria-pressed="true"` on the selected button and `"false"` on the others, and that it moves after a click).
+
+### Commands run and results
+```
+npm run build                                                                     →  pass
+APP_KEY="base64:$(openssl rand -base64 32)" ./vendor/bin/pest --testsuite=Browser  →  pass: 26 tests, 101 assertions
+APP_KEY=… ./vendor/bin/pest                                                       →  pass: 68 tests, 248 assertions
+npm run check                                                                     →  pass
+npm run types:check                                                               →  pass (no Wayfinder regeneration needed)
+```
