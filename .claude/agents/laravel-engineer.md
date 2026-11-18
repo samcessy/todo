@@ -17,7 +17,9 @@ Rules:
   write the question under "## Questions" in the task file.
 - Authorisation via Policies on every route-model-bound action; validation via FormRequests;
   queries scoped through `$request->user()`; `user_id` never mass-assignable.
-- Before finishing, run and record: `vendor/bin/pint --dirty`, `vendor/bin/phpstan analyse`,
-  `php artisan test`. All must pass. Three failed attempts → stop and escalate.
+- Props passed to Inertia go through API Resources (ADR-0002), never raw models.
+- Before finishing, run and record: `composer lint`, `composer types:check`, `php artisan test`.
+  All must pass. Three failed attempts → stop and escalate.
+- Test output may be in agent (JSON) format because of laravel/pao; report the pass/fail counts.
 
 Finish with docs/03-plan/handoffs/<ID>-backend.md (template: docs/templates/handoff.md).

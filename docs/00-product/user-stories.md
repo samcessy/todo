@@ -14,6 +14,7 @@ As a visitor, I can create and manage an account, so that my todos are private t
 - **AC3** Given valid credentials, when I log in, then I land on `/todos`.
 - **AC4** Given 5 failed login attempts in a row, when I try again, then I am rate-limited.
 - **AC5** Given I am logged in, when I delete my account and confirm with my password, then my user record and all my todos are removed.
+- **AC6** Given I enabled two-factor login, when I log in with the correct password, then I must also enter a valid TOTP or recovery code (starter-kit behaviour, kept by G1-3; covered by new code-submission tests in `TwoFactorChallengeTest`, G2 F-13).
 
 ## US-02 Create a todo (Must)
 
@@ -34,7 +35,7 @@ As a user, I can see my todos, so that I know what is left to do.
 - **AC2** Todos are ordered newest first.
 - **AC3** Given I have no todos, then I see an empty state that invites me to add one.
 - **AC4** The counts for all, active, and completed are shown and are correct.
-- **AC5** An active todo whose due date is before today is visibly marked overdue, by text and not only by colour.
+- **AC5** An active todo whose due date is before the user's local today (browser date, G2-13) is visibly marked overdue, by text and not only by colour.
 - **AC6** The page runs a fixed number of queries whether I have 1 or 100 todos.
 
 ## US-04 Edit a todo (Must)
@@ -77,6 +78,8 @@ As a user, I can filter by status, so that I can focus on what matters.
 
 ## Cross-cutting acceptance (applies to every story)
 
-- Every interactive control has an accessible name and visible focus.
-- Every form shows validation errors next to the field, and they are linked by `aria-describedby`.
-- No user content is rendered as raw HTML.
+- **CC.AC1** Every interactive control has an accessible name and visible focus.
+- **CC.AC2** Every form shows validation errors next to the field, and they are linked by `aria-describedby`.
+- **CC.AC3** No user content is rendered as raw HTML.
+
+Exact names, texts and focus targets are defined in `docs/02-architecture/contracts.md` §6.1.

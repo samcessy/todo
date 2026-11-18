@@ -19,6 +19,15 @@ AI drafts, deterministic tools verify, and humans decide.
 **Approver:** the project owner, as a single approver (decision D6 in `00-product/assumptions.md`).
 The compensating control is that the AI QA and AI security reviews are mandatory inputs to G4 and G5.
 
+**Identities (G1-1, G2-5):** agents push and open PRs as a separate low-privilege bot GitHub account,
+using a classic PAT with only the `public_repo` scope (no `workflow` scope, 90-day expiry) and no SSH keys,
+so the bot cannot change `.github/workflows/*`. *(Token type confirmed by the owner, 2026-11-17.)*
+The owner reviews and merges as themselves. The owner's own `gh` login is never available in agent sessions.
+
+**Production release (G1-2):** CI deploys staging. Production is deployed only by the owner, who triggers
+the owner-held Laravel Cloud deploy hook with the staged commit SHA. The hook URL is never stored in GitHub,
+in the repo, or in any agent-readable location.
+
 ## Autonomy matrix
 
 | AI acts autonomously | AI proposes, human approves | AI never does |
@@ -43,14 +52,26 @@ in the task file. It does not improvise.
 - PRs are limited to about 400 changed lines.
 - Engineer agents never edit `tests/`. The QA agent never edits `app/` or `resources/js/` (except `*.spec.ts`).
 
+## Exceptions
+
+| ID | Rule excepted | Scope | Approved | Conditions |
+|---|---|---|---|---|
+| E-1 | "Never delete tests" | Delete `tests/Feature/DashboardTest.php` (replaced 1:1 by `IndexTest`: US-01.AC1 plus 200 for a verified user) and retarget 6 kit assertions from `dashboard` to `todos.index` | Owner, G2-8, 2026-11-17 | Done by the QA agent in one dedicated task with `human_approval_required: [E-1]`; reviewed at G4 |
+
 ## Enforcement
 
-| Rule | How it is enforced |
-|---|---|
-| `.env` access, push to main, destructive DB commands | `.claude/settings.json` deny and ask rules (enforced by the harness) |
-| PHP formatting | PostToolUse hook `.claude/hooks/pint-on-edit.sh` |
-| Agent path scopes | Agent instructions, plus the PR diff review at G4. **These are not technically enforced yet.** A path-guard hook is a candidate for T-001 |
-| Merge and deploy approval | GitHub branch protection and Environment required reviewers (T-002) |
+| Rule | How it is enforced | Strength |
+|---|---|---|
+| `.env` access, push to main, force push, destructive DB commands, `gh pr merge`/`secret` | `.claude/settings.json` deny and ask rules | Best-effort: Bash rules can be bypassed by unusual command forms or scripts. A sandbox is planned |
+| Push to `main`, merge approval | GitHub branch protection: PR required, 1 approval, required checks, **no bypass** (free on the public repo; T-002). Bot identity (G1-1) | **Authoritative** |
+| Workflow changes / secret exfiltration | Bot token without `workflow` scope + CI `workflow-lint` (no `secrets.*` outside the staging deploy job) + `staging` Environment secret limited to `main` (G2-5) | **Authoritative while the owner alone holds the bot account's password, 2FA seed and recovery codes** |
+| Production deploy | Owner-held deploy hook (G1-2) | **Authoritative while custody holds**: agents never have the hook. Never paste it into an agent-visible shell (shell history, A-16) |
+| Agent role scopes | PreToolUse `.claude/hooks/path-guard.sh` + `scopes.json` (routes on `agent_type`; protects `.claude/settings.json` and hooks from every agent, including the main session) | Best-effort for Bash writes; reliable for Edit/Write |
+| Task scopes (`scope.paths`) | CI scope check: the PR's changed files must match the task's `scope.paths` (T-002) | **Authoritative** |
+| Raw HTML in templates | CI `vue/compiler-sfc` check (ADR-0003) | **Authoritative** |
+| PHP formatting | PostToolUse `.claude/hooks/pint-on-edit.sh` (not run for Bash edits) + CI `pint --test` | CI is authoritative |
+
+Changes to `.claude/settings.json`, `.claude/hooks/*` and `scopes.json` are made by the owner only.
 
 ## Gate log
 
@@ -58,3 +79,15 @@ in the task file. It does not improvise.
 |---|---|---|---|---|
 | G0 | 2026-11-16 | Project owner | Approved | Decisions D1–D8 accepted as recommended |
 | G1 | 2026-11-16 | Project owner | Approved | All 11 decisions in docs/01-research/G1-decision-packet.md accepted as recommended |
+| G2 | 2026-11-18 | Project owner | Approved | G2-1 to G2-16 approved 2026-11-17 as recommended (G2-10: public repo). Owner confirmations 2026-11-17: classic `public_repo` bot PAT, N-01 72-byte password limit, waiver W-1 (ASVS 3.3.1 for `XSRF-TOKEN`, `remember_web_*`, `appearance`, `sidebar_state`). Security re-check "Approve with changes", all blockers resolved; QA re-check "Testable with changes", F-01 to F-03 resolved. ADR-0001 to 0006 Accepted. Residuals RR-1 to RR-4 accepted by the owner ("accept", 2026-11-18) |
+
+## Accepted residual risks
+
+Security findings closed as "won't fix" with owner approval. Each is revisited if its trigger fires.
+
+| ID | Residual | Accepted | Revisit trigger |
+|---|---|---|---|
+| RR-1 | R-23a: Fortify login and `password.confirm.store` still truncate passwords at 72 bytes (only relevant to a stored password of exactly 72 bytes) | Owner, G2, 2026-11-18 | Fortify adds a hook for login validation, or the hashing algorithm changes |
+| RR-2 | R-23b: `uncompromised()` passes the password if HIBP is unreachable (Laravel default) | Owner, G2, 2026-11-18 | Evidence of HIBP outages being exploited, or ASVS L2 adopted |
+| RR-3 | CC.AC2: `aria-describedby` linkage not asserted on the starter kit's own auth and settings forms (todo forms are tested) | Owner, G2, 2026-11-18 | An accessibility complaint, or the kit forms are edited |
+| RR-4 | T-08: the 5/hour per-email reset limit lets anyone block password reset for a known address for an hour | Owner, G2, 2026-11-18 | A report of reset lockout abuse |
