@@ -159,7 +159,11 @@ test('due yesterday and active is overdue', () => {
 | C-17 | security.md T-24 | Mechanism chosen (re-run provider boot); refresh rejected (loses the `:memory:` DB); `runningUnitTests()` caveat; `forceHttps` line re-verified on 13.43.0 | Security doc |
 | C-18 | architecture.md §5.1 | Grep re-run confirmed; passkey row: feature test feasible; new row `bootstrap/app.php` (`redirectUsersTo('/todos')`) | File list changed |
 
-## Owner approval needed
+## Owner decision (2026-11-18)
+
+**Approved:** all corrections C-1 to C-18 as proposed ("approved. recommend and continue"). For C-6 the recommended option is taken: `$middleware->redirectUsersTo('/todos')` in `bootstrap/app.php`, implemented in T-008 together with the Dashboard removal (kit edit and auth redirect change, approved here).
+
+## Owner approval needed (as submitted)
 
 Governance requires owner approval for `contracts.md` changes, for auth changes and (T-005 task file) for any `security.md` correction. For the PR:
 
