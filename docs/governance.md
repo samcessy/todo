@@ -57,6 +57,7 @@ in the task file. It does not improvise.
 | ID | Rule excepted | Scope | Approved | Conditions |
 |---|---|---|---|---|
 | E-1 | "Never delete tests" | Delete `tests/Feature/DashboardTest.php` (replaced 1:1 by `IndexTest`: US-01.AC1 plus 200 for a verified user) and retarget 6 kit assertions from `dashboard` to `todos.index` | Owner, G2-8, 2026-11-17 | Done by the QA agent in one dedicated task with `human_approval_required: [E-1]`; reviewed at G4 |
+| E-2 | NFR-04 "no known high or critical CVEs" (CI `audit` job, `npm audit --audit-level=high`) | Advisory **GHSA-fc5q-39xc-vjpf** only (picomatch ReDoS, `<=4.0.7`, no patched release; build-time only, not in the browser bundle or runtime; security review T-001 rates it Low) | Owner, 2026-11-18 (option A) | **Expires 2026-12-18.** The allow-list names the advisory ID, never a package, so any other high or critical advisory still fails; each entry has an expiry of at most 30 days, a reason and an approver, and an expired entry fails the job; the allow-list and audit script are owner-only CI-gate files (security.md T-18 (8)); `composer audit` stays strict; the entry is removed as soon as a patched picomatch is installable; renewal needs a new owner approval |
 
 ## Enforcement
 

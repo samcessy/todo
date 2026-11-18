@@ -1,0 +1,65 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Larastan\Larastan\Rules\UselessConstructs;
+
+use Larastan\Larastan\Support\CallArgumentsHelper;
+use PhpParser\Node;
+use PhpParser\Node\Expr\FuncCall;
+use PHPStan\Analyser\Scope;
+use PHPStan\DependencyInjection\AutowiredService;
+use PHPStan\Rules\Rule;
+use PHPStan\Rules\RuleError;
+use PHPStan\Rules\RuleErrorBuilder;
+use PHPStan\Type\ClosureType;
+use PHPStan\Type\MixedType;
+
+use function count;
+use function strtolower;
+
+/** @implements Rule<FuncCall> */
+#[AutowiredService]
+class NoUselessValueFunctionCallsRule implements Rule
+{
+    public function __construct(private CallArgumentsHelper $callArgumentsHelper)
+    {
+    }
+
+    public function getNodeType(): string
+    {
+        return FuncCall::class;
+    }
+
+    /** @return RuleError[] */
+    public function processNode(Node $node, Scope $scope): array
+    {
+        if (! $node->name instanceof Node\Name) {
+            return [];
+        }
+
+        if (strtolower($node->name->toString()) !== 'value') {
+            return [];
+        }
+
+        $args = $this->callArgumentsHelper->ofFunctionCall($node, $scope) ?? [];
+
+        if (count($args) < 1) {
+            return [];
+        }
+
+        if ($scope->getType($args[0]->value)->isSuperTypeOf(new ClosureType([], new MixedType(), true))->no() === false) {
+            return [];
+        }
+
+        return [
+            RuleErrorBuilder::message("Calling the helper function 'value()' without a closure as the first argument simply returns the first argument without doing anything")
+                ->line($node->getStartLine())
+                ->identifier('larastan.uselessConstructs.value')
+                ->fixNode($node, static function () use ($args) {
+                    return $args[0]->value;
+                })
+                ->build(),
+        ];
+    }
+}
