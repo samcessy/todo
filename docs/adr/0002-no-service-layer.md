@@ -1,6 +1,6 @@
 # ADR-0002: No service layer. Controllers + FormRequests + Policies + Eloquent, with API Resources for props
 
-**Status:** Proposed · **Date:** 2026-11-16, revised 2026-11-17 (A-04, G2-13) · **Approver:** project owner (pending, after the G2 blocker re-check)
+**Status:** Accepted (G2, 2026-11-18) · **Date:** 2026-11-16, revised 2026-11-17 (A-04, G2-13) · **Approver:** project owner
 
 ## Context
 - `requirements.md` Constraints: "Use framework features (FormRequests, Policies, Eloquent) before adding custom layers or packages."

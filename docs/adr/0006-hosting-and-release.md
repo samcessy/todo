@@ -1,6 +1,6 @@
 # ADR-0006: Hosting on Laravel Cloud (Frankfurt) and the release flow
 
-**Status:** Proposed · **Date:** 2026-11-16, revised 2026-11-17 (G2-1, G2-5, G2-10, G2-11, G2-16) · **Approver:** project owner (pending, after the G2 blocker re-check)
+**Status:** Accepted (G2, 2026-11-18) · **Date:** 2026-11-16, revised 2026-11-17 (G2-1, G2-5, G2-10, G2-11, G2-16) · **Approver:** project owner
 
 ## Context
 - D3 (Laravel Cloud, Forge as fallback), D4 (Postgres in staging and production), D6 (one approver), D8 (GDPR baseline). NFR-05 (as amended at G1-5) and NFR-10.

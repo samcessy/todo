@@ -1,6 +1,6 @@
 # ADR-0001: Laravel 13 + official Vue starter kit (Inertia 3) as a monolith
 
-**Status:** Proposed · **Date:** 2026-11-16, revised 2026-11-17 (G2-6, G2-8, G2-9) · **Approver:** project owner (pending, after the G2 blocker re-check)
+**Status:** Accepted (G2, 2026-11-18) · **Date:** 2026-11-16, revised 2026-11-17 (G2-6, G2-8, G2-9) · **Approver:** project owner
 
 ## Context
 - D1 needs registration, email verification, password reset and account deletion, with **no custom auth code**. D2 says web only, no public API.

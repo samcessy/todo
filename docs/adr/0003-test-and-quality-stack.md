@@ -1,6 +1,6 @@
 # ADR-0003: Test and quality stack
 
-**Status:** Proposed · **Date:** 2026-11-16, revised 2026-11-17 (G2-6, G2-13, G2-14, G2-16) · **Approver:** project owner (pending, after the G2 blocker re-check)
+**Status:** Accepted (G2, 2026-11-18) · **Date:** 2026-11-16, revised 2026-11-17 (G2-6, G2-13, G2-14, G2-16) · **Approver:** project owner
 
 ## Context
 - **Targets:**

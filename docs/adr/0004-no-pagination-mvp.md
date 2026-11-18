@@ -1,6 +1,6 @@
 # ADR-0004: No pagination in the MVP
 
-**Status:** Proposed · **Date:** 2026-11-16, revised 2026-11-17 (G2-12) · **Approver:** project owner (pending, after the G2 blocker re-check)
+**Status:** Accepted (G2, 2026-11-18) · **Date:** 2026-11-16, revised 2026-11-17 (G2-12) · **Approver:** project owner
 
 ## Context
 - FR-03 and US-03 ask for the user's todos, newest first, with counts for all, active and completed. Pagination appears in no story.

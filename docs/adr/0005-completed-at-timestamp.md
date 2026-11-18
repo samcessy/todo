@@ -1,6 +1,6 @@
 # ADR-0005: Store completion as a nullable `completed_at` timestamp
 
-**Status:** Proposed · **Date:** 2026-11-16, revised 2026-11-17 (F-14, F-15, A-18) · **Approver:** project owner (pending, after the G2 blocker re-check)
+**Status:** Accepted (G2, 2026-11-18) · **Date:** 2026-11-16, revised 2026-11-17 (F-14, F-15, A-18) · **Approver:** project owner
 
 ## Context
 - US-05.AC1 and AC2 refer to `completed_at` by name: it is set on complete and null on incomplete. US-03.AC4 needs counts for active and completed. US-07 filters on status.

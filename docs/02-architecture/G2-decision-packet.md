@@ -1,6 +1,6 @@
 # G2 Decision Packet
 
-**Status:** Decisions approved 2026-11-17 (all as recommended; G2-10 = public repo, github.com/samcessy/todo). Gate recorded after the blocker re-check · **Prepared:** 2026-11-16 by the orchestrator
+**Status:** Decisions approved 2026-11-17 (all as recommended; G2-10 = public repo, github.com/samcessy/todo). Gate recorded 2026-11-18 (see `docs/governance.md` gate log) · **Prepared:** 2026-11-16 by the orchestrator
 **Inputs:** ADR-0001 to 0006 (Proposed), `docs/02-architecture/*`, `reviews/G2-security-review.md`, `docs/04-quality/G2-testability-review.md`, `docs/04-quality/traceability-matrix.md`
 
 ## Review outcome
