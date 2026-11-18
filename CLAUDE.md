@@ -15,7 +15,7 @@ The gate status is recorded in `docs/governance.md` → Gate log.
 |---|---|
 | Gates, autonomy, escalation | `docs/governance.md` |
 | What we are building | `docs/00-product/` |
-| Accepted decisions | `docs/adr/` (none yet) |
+| Accepted decisions | `docs/adr/` (0001–0006, accepted at G2) |
 | Your assignment | `docs/03-plan/tasks/<ID>.md` |
 | Doc formats | `docs/templates/` |
 
