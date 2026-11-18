@@ -80,6 +80,7 @@ Changes to `.claude/settings.json`, `.claude/hooks/*` and `scopes.json` are made
 | G0 | 2026-11-16 | Project owner | Approved | Decisions D1–D8 accepted as recommended |
 | G1 | 2026-11-16 | Project owner | Approved | All 11 decisions in docs/01-research/G1-decision-packet.md accepted as recommended |
 | G2 | 2026-11-18 | Project owner | Approved | G2-1 to G2-16 approved 2026-11-17 as recommended (G2-10: public repo). Owner confirmations 2026-11-17: classic `public_repo` bot PAT, N-01 72-byte password limit, waiver W-1 (ASVS 3.3.1 for `XSRF-TOKEN`, `remember_web_*`, `appearance`, `sidebar_state`). Security re-check "Approve with changes", all blockers resolved; QA re-check "Testable with changes", F-01 to F-03 resolved. ADR-0001 to 0006 Accepted. Residuals RR-1 to RR-4 accepted by the owner ("accept", 2026-11-18) |
+| G3 | 2026-11-18 | Project owner | Approved | All 12 decisions in docs/03-plan/G3-decision-packet.md accepted as recommended ("approve G3"), including G3-4 (owner adds role scopes in `.claude/hooks/scopes.json`). Roadmap, tasks T-001 to T-026, test strategy and the global Definition of Done approved. Plan written without an independent review (owner informed). T-001 set to ready |
 
 ## Accepted residual risks
 

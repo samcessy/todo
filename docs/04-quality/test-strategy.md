@@ -1,6 +1,6 @@
 # Test strategy
 
-**Status:** Draft for G3 · **Author:** orchestrator (adopted and maintained by the QA agent from T-002 on) · **Date:** 2026-11-18
+**Status:** Approved (G3, 2026-11-18) · **Author:** orchestrator (adopted and maintained by the QA agent from T-002 on) · **Date:** 2026-11-18
 **Inputs:** ADR-0003 (tools and CI gates), `contracts.md` (§1.1.1 statuses, §2 rules, §3 filter and query budget, §5.3 overdue, §6.1 UI contract), `security.md` §2 and §4, `coding-standards.md` §4, `traceability-matrix.md`, `governance.md` (E-1, loop guardrails), residuals RR-1 to RR-4.
 
 ## 1. Principles

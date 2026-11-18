@@ -1,6 +1,6 @@
 # G3 Decision Packet
 
-**Status:** Awaiting owner decision · **Prepared:** 2026-11-18 by the orchestrator
+**Status:** Approved 2026-11-18 (all 12 decisions as recommended, including G3-4) · **Prepared:** 2026-11-18 by the orchestrator
 **Inputs:** `roadmap.md`, `tasks/T-001.md` to `tasks/T-026.md`, `04-quality/test-strategy.md`, `templates/task.md` (revised), G2 documents (accepted 2026-11-18).
 
 ## What G3 approves

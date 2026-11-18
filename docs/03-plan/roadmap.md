@@ -1,6 +1,6 @@
 # Roadmap
 
-**Status:** Draft for G3 · **Author:** orchestrator · **Date:** 2026-11-18
+**Status:** Approved (G3, 2026-11-18) · **Author:** orchestrator · **Date:** 2026-11-18
 **Inputs:** `00-product/*` (G0), ADR-0001 to 0006 and `02-architecture/*` (G2, 2026-11-18), `04-quality/traceability-matrix.md`, `governance.md`.
 **Companion docs:** `tasks/T-001.md` to `tasks/T-026.md`, `04-quality/test-strategy.md`, `G3-decision-packet.md`.
 
