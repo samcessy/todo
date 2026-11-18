@@ -1,6 +1,6 @@
 # Contracts: routes, validation, props, UI
 
-**Status:** Draft for G2 (revised 2026-11-17 after the G2 decisions) · **Date:** 2026-11-16, revised 2026-11-17
+**Status:** Draft for G2 (revised 2026-11-17 after the G2 decisions; spike corrections 2026-11-18, T-005, marked "(T-005)") · **Date:** 2026-11-16, revised 2026-11-17, 2026-11-18
 **Changing this file needs owner approval** (governance). Implementation must match it exactly. CI checks §1 against `php artisan route:list --json` (§1.2), and the browser tests check §6.1.
 
 ## 1. Routes
@@ -17,7 +17,7 @@ Every route has the `web` middleware group (session, CSRF via `PreventRequestFor
 | DELETE | `/todos/{todo}` | `todos.destroy` | `TodoController@destroy` | — | `throttle:todo-writes`, `can:delete,todo` | `TodoPolicy@delete` | redirect back, flash `toast = {type:'success', message:'Todo deleted.'}` | 403, 404, 429 |
 
 #### 1.1.1 Status code per request type (G2-6, F-01)
-The Inertia middleware rewrites 302 to 303 for PUT, PATCH, DELETE (and QUERY) **only when the request carries `X-Inertia: true`**. Without the header it returns before the rewrite (`inertia-laravel/src/Middleware.php:162` returns early, the rewrite is at `:179`, v3.7.0; verified by the orchestrator and QA in the kit source).
+The Inertia adapter rewrites 302 to 303 for PUT, PATCH and DELETE **only when the request carries `X-Inertia: true`**. Without the header nothing is rewritten. **(T-005)** It does this in two places (inertia-laravel 3.7.0): `HandleInertiaRequests` (`src/Middleware.php:162` returns early without the header, the rewrite is at `:178-179`, also for QUERY), **and** the global middleware `Inertia\Middleware\EnsureGetOnRedirect` (`src/Middleware/EnsureGetOnRedirect.php:21-26`), which the package's service provider pushes onto the HTTP kernel (`src/ServiceProvider.php:78`). The global one wraps every route, so it rewrites **every** 302 on an Inertia PATCH or DELETE, whichever middleware produced it. Measured by the T-005 spike, one request per cell.
 
 | Outcome | Inertia request (`X-Inertia: true`), POST | Inertia request, PATCH / DELETE | Non-Inertia request (no header), any method |
 |---|---|---|---|
@@ -25,16 +25,16 @@ The Inertia middleware rewrites 302 to 303 for PUT, PATCH, DELETE (and QUERY) **
 | Validation failure (redirect back with `errors`) | **302** | **303** | **302** |
 | Guest (redirect to `/login`) | **302** | **303** | **302** |
 | Unverified (redirect to `/email/verify`) | **302** | **303** | **302** |
-| Expired CSRF token (419 handler → redirect back, architecture §2a) | **302** | **302** | **302** |
+| Expired CSRF token (419 handler → redirect back, architecture §2a) | **302** | **303** (T-005) | **302** |
 | Not the owner | 403 | 403 | 403 |
 | No such id | 404 | 404 | 404 |
 | Over the rate limit | 429 | 429 | 429 |
 
-`GET /todos` as a guest or unverified user returns **302** in both cases (GET is never rewritten).
+`GET /todos` as a guest or unverified user returns **302** in both cases (GET is never rewritten). **(T-005)** One exception, for tests: an Inertia GET whose `X-Inertia-Version` does not match the asset version (a missing header counts as a mismatch once `public/build/manifest.json` exists) returns **409** with `X-Inertia-Location` (`Middleware.php:170-172`, `:290-302`). The spike saw 409 for the unverified GET with `X-Inertia` and no version header. The guest GET stays 302, because `auth` is sorted ahead of `HandleInertiaRequests` (below).
 
-Why the rows differ: `auth`, `verified` and `can:` are route middleware, so their redirect passes back out through `HandleInertiaRequests` (the last entry of the `web` group) and is rewritten. `PreventRequestForgery` sits **outside** `HandleInertiaRequests` in the `web` group, so the 419 handler's redirect is never rewritten. The T-001 spike runs one request per row of this table against the kit and corrects any cell, with owner approval, before QA writes the status tests.
+Why the rows differ **(T-005, corrected)**: only the method and the header matter, not which middleware produced the redirect. The global `EnsureGetOnRedirect` rewrites any 302 on an Inertia PATCH or DELETE. The 419 redirect is therefore 303 too: the spike measured 303 both from a stub route that throws `TokenMismatchException` and from the real `PreventRequestForgery` with its unit-test bypass switched off. For reference, the resolved order for `todos.update` is `EncryptCookies`, `AddQueuedCookiesToResponse`, `StartSession`, `ShareErrorsFromSession`, `PreventRequestForgery`, `Authenticate`, `ThrottleRequests`, `AuthenticateSession`, `SubstituteBindings`, `HandleAppearance`, `HandleInertiaRequests`, `AddLinkHeadersForPreloadedAssets`, `EnsureEmailIsVerified`, `Authorize`. The kernel's middleware priority list (`Illuminate/Foundation/Http/Kernel.php:103-115`) sorts `auth`, `throttle`, `auth.session` and bindings ahead of the `web` group's appended entries. 403, 404 and 429 are the same with and without the header. The spike also confirmed that a non-owner who sends an invalid payload gets 403 and the todo is unchanged.
 
-**Test convention:** feature tests for write routes send `X-Inertia: true` through one helper in `tests/Pest.php` (`inertia()` = `withHeaders(['X-Inertia' => 'true'])`) and assert the **exact** status from this table. Guest, 403, 404 and 429 tests may stay header-free (302 for the guest redirect).
+**Test convention:** feature tests for write routes send `X-Inertia: true` through one helper in `tests/Pest.php` (`inertia()` = `withHeaders(['X-Inertia' => 'true'])`) and assert the **exact** status from this table. Guest, 403, 404 and 429 tests may stay header-free (302 for the guest redirect). **(T-005)** The helper must go through `get()`/`post()`/`patch()`/`delete()`. `$this->call()` ignores `withHeaders()`, which made the first spike run look header-free. Use `inertia()` only for writes, or add the matching `X-Inertia-Version`, because an Inertia GET without it returns 409 (above). The 419 test may use a test-only route that throws `TokenMismatchException`: it gives the same status, `Location` and flash as the real middleware.
 
 **Notes**
 - "Back" means `back(fallback: route('todos.index'))`. It returns to the previous URL, `/todos?filter=…`, so the filter survives (US-07.AC3). With no previous URL it goes to `todos.index`. Test: `->from('/todos?filter=active')` on the write, then `assertRedirect('/todos?filter=active')`.
@@ -48,6 +48,7 @@ Why the rows differ: `auth`, `verified` and `can:` are route middleware, so thei
 - `GET /dashboard` (`dashboard`) and `pages/Dashboard.vue` are **removed**. `fortify.home` becomes `/todos`, so `/todos` is the home after login, registration, verification and passkey login. The complete file list is in `architecture.md` §5.1.
 - Fortify's `register.store`, `password.email`, `password.update`, `password.confirm.store` and the kit's `profile.destroy` get rate limits through `ThrottleAuthEndpoints` (security.md T-08). Their URIs, names and controllers are unchanged.
 - All authenticated kit route groups get `auth.session` (security.md T-06).
+- **(T-005)** An authenticated user who opens a `guest` route (`/login`, `/register`, `/forgot-password`, `/reset-password/{token}`, `/two-factor-challenge`) is redirected to `/todos`, through `$middleware->redirectUsersTo('/todos')` in `bootstrap/app.php`. Without it, removing the `dashboard` route sends these users to `/` (Welcome), because `RedirectIfAuthenticated::defaultRedirectUri()` tries the route names `dashboard` and then `home` (`Illuminate/Auth/Middleware/RedirectIfAuthenticated.php:63-80`). Verified in the spike: dashboard present → `/dashboard`; dashboard removed → `/`; with `redirectUsersTo('/todos')` → `/todos`.
 - `GET /` (`home`, Welcome) stays public. `GET /up` is the health route.
 
 **Named rate limiters** (in `AppServiceProvider::boot`; https://laravel.com/docs/13.x/routing#defining-rate-limiters)
@@ -71,7 +72,7 @@ php artisan route:list --json --path=todos | jq -S '[.[] | {method, uri, name, a
 ```
 It diffs the output against the block below.
 
-**Verified by spike, 2026-11-16:** I added the `todos.index` and `todos.update` definitions from §1.3 to a copy of the kit (Laravel 13.42.0), then ran the command above. The output had exactly this shape: `"method": "GET|HEAD"` and `"PATCH"`; `"uri": "todos/{todo}"`; `"action": "App\\Http\\Controllers\\…@update"`; a `middleware` array in definition order. The `auth.session` entry is new after G2 and is confirmed by the T-001 spike (the alias may print as `auth.session` or as the class name; the block is updated to the printed form in that PR, with owner approval).
+**Verified by spike, 2026-11-16:** I added the `todos.index` and `todos.update` definitions from §1.3 to a copy of the kit (Laravel 13.42.0), then ran the command above. The output had exactly this shape: `"method": "GET|HEAD"` and `"PATCH"`; `"uri": "todos/{todo}"`; `"action": "App\\Http\\Controllers\\…@update"`; a `middleware` array in definition order. The `auth.session` entry is new after G2. **(T-005)** On Laravel 13.43.0 it prints as the alias `"auth.session"`, not the class name. The spike's output for the five §1.3 routes is byte-identical to the block below (`diff` of the `jq -S` output), so the block is unchanged.
 
 Changes to this block need owner approval and must not loosen the check.
 
@@ -130,13 +131,13 @@ These live in `App\Concerns\TodoValidationRules`. Store and Update use the same 
 - The list is always ordered `created_at DESC, id DESC` (US-03.AC2). `id` breaks ties for todos created in the same second.
 - `counts` **ignore the filter**: they always cover all of the user's todos (US-03.AC4).
 - The URL is the source of truth for the filter (US-07.AC3). **Link targets (F-17):** All → `/todos` (no query string), Active → `/todos?filter=active`, Completed → `/todos?filter=completed`. Links are Inertia `<Link>`s built with Wayfinder (`index()` and `index({ query: { filter } })`), with `only: ['todos', 'filter']`, `preserveState`, `preserveScroll`, and `aria-current="page"` on the active link (US-07.AC4).
-- **Query budget (F-07, US-03.AC6):** with `actingAs()` and the testing environment (`SESSION_DRIVER=array`, `CACHE_STORE=array`), `GET /todos` (any filter) executes **exactly 2** queries: the list query and the count query (architecture §3). The T-001 spike confirms or corrects the number before G3, with owner approval for any change. Until then QA writes only the 1-vs-100 equality test.
+- **Query budget (F-07, US-03.AC6):** with `actingAs()` and the testing environment (`SESSION_DRIVER=array`, `CACHE_STORE=array`), `GET /todos` (any filter) executes **exactly 2** queries: the list query and the count query (architecture §3). **(T-005) Confirmed:** `expectsDatabaseQueryCount(2)` passes for `filter` absent, `all`, `active`, `completed` and `foo`, with 1+1 and 100+100 todos (10 cases), on sqlite `:memory:`. QA may write the exact budget test as well as the equality test. With a real session login instead of `actingAs()`, the user lookup adds a third query (`select * from "users" where "id" = ? limit 1`). That is why the budget is defined for `actingAs()` only.
 
 ## 4. Shared props used (from the kit's `HandleInertiaRequests`)
 | Prop | Type | Source | Used for |
 |---|---|---|---|
 | `name` | `string` | `config('app.name')` | layout title |
-| `auth.user` | `User` (kit type) | **explicit allow-list** `$request->user()?->only(['id', 'name', 'email', 'email_verified_at'])` (security.md T-04, A-04). T-001 adds any key the kit pages read, by an owner-approved change to this row | nav user menu, profile page |
+| `auth.user` | `User` (kit type) | **explicit allow-list** `$request->user()?->only(['id', 'name', 'email', 'email_verified_at'])` (security.md T-04, A-04). **(T-005)** The kit pages read `name`, `email`, `email_verified_at` and the optional `avatar`, so **no key is added**. `avatar` is not a column: `UserInfo.vue:20` and `AppHeader.vue:252` fall back to initials when it is absent. The kit's raw model share sends `id`, `name`, `email`, `email_verified_at`, `two_factor_confirmed_at`, `created_at` and `updated_at` today. The kit type `User` (`types/auth.ts`) declares `created_at`, `updated_at` (required) and `two_factor_enabled?`, which are not sent after the allow-list. The task that adds the allow-list narrows that type to the four keys plus `avatar?` | nav user menu, profile page |
 | `sidebarOpen` | `boolean` | cookie | kit layout |
 | `errors` | `Record<string, string>` | Inertia (session errors) | form field errors |
 | `flash.toast` (page-level `flash`, not a prop) | `FlashToast` (`{ type: 'success'|'info'|'warning'|'error'; message: string }`, kit `types/ui.ts`) | `Inertia::flash('toast', …)` | toast through the kit's `initializeFlashToast()` |
@@ -207,7 +208,7 @@ return Inertia::render('todos/Index', [
     'filter' => $filter->value,
 ]);
 ```
-**Contract test:** one strict `assertInertia` per page. It uses `component('todos/Index')`, `has('todos', n)`, `has('todos.0', fn ($t) => $t->hasAll([...7 keys]))` **without `etc()`**, plus `where('counts.total', …)`, `where('filter', …)`, `missing('todos.0.user_id')` and `missing('todos.0.is_overdue')`. A field added on one side only then fails CI (R-002 red-team finding 1). Counts are cast to `(int)` explicitly, because the type of a raw aggregate can differ between PDO drivers (**UNVERIFIED** for pdo_pgsql on PHP 8.4). The `where('counts.total', 3)` strict comparison in the pgsql CI job catches any difference.
+**Contract test:** one strict `assertInertia` per page. It uses `component('todos/Index')`, `has('todos', n)`, `has('todos.0', fn ($t) => $t->hasAll([...7 keys]))` **without `etc()`**, plus `where('counts.total', …)`, `where('filter', …)`, `missing('todos.0.user_id')` and `missing('todos.0.is_overdue')`. A field added on one side only then fails CI (R-002 red-team finding 1). Counts are cast to `(int)` explicitly, because the type of a raw aggregate can differ between PDO drivers. **(T-005)** pdo_sqlite returned PHP `integer` for both aggregates in the spike (PHP 8.4.25). For pdo_pgsql: PostgreSQL's `count(*)` and `count(col)` return `bigint` (https://www.postgresql.org/docs/18/functions-aggregate.html, fetched 2026-11-18). pdo_pgsql returns `INT8OID` as a PHP int when `SIZEOF_ZEND_LONG >= 8` and as a string otherwise (php-src `PHP-8.4` `ext/pdo_pgsql/pgsql_statement.c`, `pgsql_stmt_get_col`, fetched 2026-11-18). Laravel sets `ATTR_STRINGIFY_FETCHES => false` (`Illuminate/Database/Connectors/Connector.php:23`). So it is an int on 64-bit PHP: verified from source, not run, because no local PostgreSQL server was available. The cast stays. The `where('counts.total', 3)` strict comparison in the pgsql CI job is the live check.
 
 ### 5.3 Overdue (FR-08, US-03.AC5, G2-13)
 Overdue is computed **in the browser from the user's local calendar date**, by a pure function:
