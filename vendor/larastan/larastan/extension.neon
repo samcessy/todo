@@ -1,0 +1,180 @@
+attributeServicesDirectories:
+    - src
+
+parameters:
+    universalObjectCratesClasses:
+        - Illuminate\Http\Request
+        - Illuminate\Support\Optional
+    earlyTerminatingFunctionCalls:
+        - abort
+        - dd
+    mixinExcludeClasses:
+        - Eloquent
+    bootstrapFiles:
+        - bootstrap.php
+    checkOctaneCompatibility: false
+    noEnvCallsOutsideOfConfig: true
+    noModelMake: true
+    noImplicitQueryBuilderCall: false
+    noUnnecessaryCollectionCall: true
+    noUnnecessaryCollectionCallOnly: []
+    noUnnecessaryCollectionCallExcept: []
+    noUnnecessaryEnumerableToArrayCalls: false
+    squashedMigrationsPath: []
+    databaseMigrationsPath: []
+    disableMigrationScan: false
+    disableSchemaScan: false
+    configDirectories: []
+    viewDirectories: []
+    translationDirectories: []
+    checkModelProperties: false
+    checkUnusedViews: false
+    checkMissingTranslations: false
+    checkModelAppends: true
+    checkModelMethodVisibility: false
+    generalizeEnvReturnType: false
+    checkConfigTypes: false
+    checkAuthCallsWhenInRequestScope: false
+    parseModelCastsMethod: false
+    pivotTypesInCollections: false
+    enableMigrationCache: true
+    checkUniqueJobUniqueFor: false
+    checkUniqueJobUniqueId: false
+    noBatchedUniqueJob: false
+    checkJobSerializesModels: false
+    checkBatchedJobIsBatchable: false
+    checkBatchableJobChecksCancellation: false
+    checkDispatchInTransactionAfterCommit: false
+    redisDriver: null
+
+parametersSchema:
+    checkOctaneCompatibility: bool()
+    noEnvCallsOutsideOfConfig: bool()
+    noModelMake: bool()
+    noImplicitQueryBuilderCall: bool()
+    noUnnecessaryCollectionCall: bool()
+    noUnnecessaryCollectionCallOnly: listOf(string())
+    noUnnecessaryCollectionCallExcept: listOf(string())
+    noUnnecessaryEnumerableToArrayCalls: bool()
+    databaseMigrationsPath: listOf(string())
+    disableMigrationScan: bool()
+    configDirectories: listOf(string())
+    viewDirectories: listOf(string())
+    translationDirectories: listOf(string())
+    squashedMigrationsPath: listOf(string())
+    disableSchemaScan: bool()
+    checkModelProperties: bool()
+    checkUnusedViews: bool()
+    checkMissingTranslations: bool()
+    checkModelAppends: bool()
+    checkModelMethodVisibility: bool()
+    generalizeEnvReturnType: bool()
+    checkConfigTypes: bool()
+    checkAuthCallsWhenInRequestScope: bool()
+    parseModelCastsMethod: bool()
+    pivotTypesInCollections: bool()
+    enableMigrationCache: bool()
+    checkUniqueJobUniqueFor: bool()
+    checkUniqueJobUniqueId: bool()
+    noBatchedUniqueJob: bool()
+    checkJobSerializesModels: bool()
+    checkBatchedJobIsBatchable: bool()
+    checkBatchableJobChecksCancellation: bool()
+    checkDispatchInTransactionAfterCommit: bool()
+    redisDriver: schema(anyOf('phpredis', 'predis'), nullable())
+
+services:
+    -
+        class: Larastan\Larastan\ReturnTypes\ContainerArrayAccessDynamicMethodReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+        arguments:
+            className: Illuminate\Contracts\Container\Container
+    -
+        class: Larastan\Larastan\ReturnTypes\ContainerArrayAccessDynamicMethodReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+        arguments:
+            className: Illuminate\Container\Container
+    -
+        class: Larastan\Larastan\ReturnTypes\ContainerArrayAccessDynamicMethodReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+        arguments:
+            className: Illuminate\Foundation\Application
+    -
+        class: Larastan\Larastan\ReturnTypes\ContainerArrayAccessDynamicMethodReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+        arguments:
+            className: Illuminate\Contracts\Foundation\Application
+
+    -
+        class: Larastan\Larastan\Types\AbortIfFunctionTypeSpecifyingExtension
+        tags:
+            - phpstan.typeSpecifier.functionTypeSpecifyingExtension
+        arguments:
+            methodName: 'abort'
+            negate: false
+
+    -
+        class: Larastan\Larastan\Types\AbortIfFunctionTypeSpecifyingExtension
+        tags:
+            - phpstan.typeSpecifier.functionTypeSpecifyingExtension
+        arguments:
+            methodName: 'abort'
+            negate: true
+
+    -
+        class: Larastan\Larastan\Types\AbortIfFunctionTypeSpecifyingExtension
+        tags:
+            - phpstan.typeSpecifier.functionTypeSpecifyingExtension
+        arguments:
+            methodName: throw
+            negate: false
+
+    -
+        class: Larastan\Larastan\Types\AbortIfFunctionTypeSpecifyingExtension
+        tags:
+            - phpstan.typeSpecifier.functionTypeSpecifyingExtension
+        arguments:
+            methodName: throw
+            negate: true
+
+    -
+        class: Larastan\Larastan\ReturnTypes\AppEnvironmentReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+        arguments:
+            class: "Illuminate\\Foundation\\Application"
+
+    -
+        class: Larastan\Larastan\ReturnTypes\AppEnvironmentReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+        arguments:
+            class: "Illuminate\\Contracts\\Foundation\\Application"
+
+    -
+        class: Larastan\Larastan\Rules\CheckDispatchArgumentTypesCompatibleWithClassConstructorRule
+        arguments:
+            dispatchableClass: Illuminate\Foundation\Bus\Dispatchable
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Larastan\Larastan\Rules\CheckDispatchArgumentTypesCompatibleWithClassConstructorRule
+        arguments:
+            dispatchableClass: Illuminate\Foundation\Events\Dispatchable
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Illuminate\Filesystem\Filesystem
+        autowired: self
+
+    migrationsParser:
+        class: PHPStan\Parser\CachedParser
+        arguments:
+            originalParser: @currentPhpVersionSimpleDirectParser
+            cachedNodesByStringCountMax: %cache.nodesByStringCountMax%
+        autowired: false

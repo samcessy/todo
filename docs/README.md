@@ -17,4 +17,4 @@ These docs are the project's source of truth. Every change goes through a pull r
 ## Doc-drift rule
 
 Every PR that changes routes, schema, or behaviour updates the matching doc in the same PR.
-CI (added in T-002) compares `php artisan route:list --json` against `02-architecture/contracts.md`.
+CI (the `lint` job, from T-025) compares `php artisan route:list --json` against `02-architecture/contracts.md` §1.2.

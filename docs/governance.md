@@ -57,6 +57,7 @@ in the task file. It does not improvise.
 | ID | Rule excepted | Scope | Approved | Conditions |
 |---|---|---|---|---|
 | E-1 | "Never delete tests" | Delete `tests/Feature/DashboardTest.php` (replaced 1:1 by `IndexTest`: US-01.AC1 plus 200 for a verified user) and retarget 6 kit assertions from `dashboard` to `todos.index` | Owner, G2-8, 2026-11-17 | Done by the QA agent in one dedicated task with `human_approval_required: [E-1]`; reviewed at G4 |
+| E-2 | NFR-04 "no known high or critical CVEs" (CI `audit` job, `npm audit --audit-level=high`) | Advisory **GHSA-fc5q-39xc-vjpf** only (picomatch ReDoS, `<=4.0.7`, no patched release; build-time only, not in the browser bundle or runtime; security review T-001 rates it Low) | Owner, 2026-11-18 (option A). **Retired 2026-11-21** (owner): GitHub withdrew the advisory on 2026-11-18, so `npm audit` no longer reports it | Historical. Conditions while active: **Expires 2026-12-18.** The allow-list names the advisory ID, never a package, so any other high or critical advisory still fails; each entry has an expiry of at most 30 days, a reason and an approver, and an expired entry fails the job; the allow-list and audit script are owner-only CI-gate files (security.md T-18 (8)); `composer audit` stays strict; the entry is removed as soon as a patched picomatch is installable; renewal needs a new owner approval |
 
 ## Enforcement
 
@@ -80,6 +81,8 @@ Changes to `.claude/settings.json`, `.claude/hooks/*` and `scopes.json` are made
 | G0 | 2026-11-16 | Project owner | Approved | Decisions D1–D8 accepted as recommended |
 | G1 | 2026-11-16 | Project owner | Approved | All 11 decisions in docs/01-research/G1-decision-packet.md accepted as recommended |
 | G2 | 2026-11-18 | Project owner | Approved | G2-1 to G2-16 approved 2026-11-17 as recommended (G2-10: public repo). Owner confirmations 2026-11-17: classic `public_repo` bot PAT, N-01 72-byte password limit, waiver W-1 (ASVS 3.3.1 for `XSRF-TOKEN`, `remember_web_*`, `appearance`, `sidebar_state`). Security re-check "Approve with changes", all blockers resolved; QA re-check "Testable with changes", F-01 to F-03 resolved. ADR-0001 to 0006 Accepted. Residuals RR-1 to RR-4 accepted by the owner ("accept", 2026-11-18) |
+| G3 | 2026-11-18 | Project owner | Approved | All 12 decisions in docs/03-plan/G3-decision-packet.md accepted as recommended ("approve G3"), including G3-4 (owner adds role scopes in `.claude/hooks/scopes.json`). Roadmap, tasks T-001 to T-026, test strategy and the global Definition of Done approved. Plan written without an independent review (owner informed). T-001 set to ready |
+| — | 2026-11-21 | Project owner | Change | Exception E-2 retired: GHSA-fc5q-39xc-vjpf withdrawn by GitHub 2026-11-18; `npm audit` is clean. T-002 keeps the advisory-ID allow-list mechanism with an empty list ("recommend, approve and continue") |
 
 ## Accepted residual risks
 

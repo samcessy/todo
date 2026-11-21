@@ -1,0 +1,79 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Larastan\Larastan\Collectors;
+
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\View\ViewName;
+use Larastan\Larastan\Support\CallArgumentsHelper;
+use PhpParser\Node;
+use PhpParser\Node\Identifier;
+use PHPStan\Analyser\Scope;
+use PHPStan\Collectors\Collector;
+use PHPStan\DependencyInjection\AutowiredService;
+use PHPStan\Type\ObjectType;
+
+use function in_array;
+
+/** @implements Collector<Node\Expr\MethodCall, string> */
+#[AutowiredService]
+final class UsedEmailViewCollector implements Collector
+{
+    public function __construct(private CallArgumentsHelper $callArgumentsHelper)
+    {
+    }
+
+    private const VIEW_METHOD_NAMES = ['view', 'html', 'text', 'markdown'];
+
+    public function getNodeType(): string
+    {
+        return Node\Expr\MethodCall::class;
+    }
+
+    /** @param Node\Expr\MethodCall $node */
+    public function processNode(Node $node, Scope $scope): string|null
+    {
+        $name = $node->name;
+
+        if (! $name instanceof Identifier) {
+            return null;
+        }
+
+        if (! in_array($name->name, self::VIEW_METHOD_NAMES, true)) {
+            return null;
+        }
+
+        $class = $node->var;
+
+        $type = $scope->getType($class);
+
+        if ($name->name === 'html' && ! (new ObjectType(Content::class))->isSuperTypeOf($type)->yes()) {
+            return null;
+        }
+
+        if (
+            ! (new ObjectType(Mailable::class))->isSuperTypeOf($type)->yes()
+            && ! (new ObjectType(MailMessage::class))->isSuperTypeOf($type)->yes()
+            && ! (new ObjectType(Content::class))->isSuperTypeOf($type)->yes()
+        ) {
+            return null;
+        }
+
+        $args = $this->callArgumentsHelper->ofMethodCall($node, $scope);
+
+        if (! isset($args[0])) {
+            return null;
+        }
+
+        $template = $args[0]->value;
+
+        if (! $template instanceof Node\Scalar\String_) {
+            return null;
+        }
+
+        return ViewName::normalize($template->value);
+    }
+}
